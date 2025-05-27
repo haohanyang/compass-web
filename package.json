@@ -3,9 +3,9 @@
   "version": "0.1.1",
   "bin": "dist/app.js",
   "scripts": {
-    "build": "webpack --env target=web",
-    "build-server": "webpack --env target=node",
-    "start": "node app.js"
+    "build": "vite build",
+    "start": "vite",
+    "clean": "rm -rf dist"
   },
   "author": "Haohan Yang",
   "license": "SSPL",
@@ -18,55 +18,27 @@
     "url": "https://github.com/haohanyang/compass-web/issues"
   },
   "description": "MongoDB Compass that runs on a browser",
-  "dependencies": {
-    "express": "^4.21.1",
-    "express-session": "^1.18.1",
-    "ws": "^8.16.0"
-  },
-  "devDependencies": {
-    "@babel/preset-env": "^7.26.0",
-    "@haohanyang/compass-web": "^0.12.2-patch2",
-    "@mongodb-js/compass-components": "^1.32.2",
-    "@mongodb-js/compass-workspaces": "^0.5.1",
-    "@mongodb-js/connection-storage": "^0.24.2",
-    "@mongodb-js/devtools-proxy-support": "^0.4.2",
-    "@mongodb-js/prettier-config-compass": "^1.0.4",
-    "@mongodb-js/prettier-config-devtools": "^1.0.1",
-    "@mongodb-js/tsconfig-compass": "^1.0.7",
-    "@mongodb-js/webpack-config-compass": "^1.4.9",
-    "@types/prop-types": "^15",
-    "@types/react": "^19.0.2",
-    "@types/react-dom": "^19.0.2",
-    "babel-loader": "^9.2.1",
-    "browser-process-hrtime": "^1.0.0",
-    "buffer": "^6.0.3",
-    "copy-webpack-plugin": "^12.0.2",
-    "crypto-browserify": "^3.12.0",
-    "events": "^3.3.0",
-    "hadron-document": "^8.6.7",
-    "is-ip": "^5.0.1",
-    "jose": "^5.9.6",
-    "os-browserify": "^0.3.0",
-    "path-browserify": "^1.0.1",
-    "prettier": "^2.7.1",
-    "process": "^0.11.10",
-    "prop-types": "^15.8.1",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "readable-stream": "^4.5.0",
-    "string_decoder": "^1.3.0",
-    "timers-browserify": "^2.0.12",
-    "util": "^0.12.5",
-    "vm-browserify": "^1.1.2",
-    "webpack": "^5.97.1",
-    "webpack-cli": "^6.0.1",
-    "webpack-node-externals": "^3.0.0",
-    "whatwg-url": "^13.0.0"
-  },
   "keywords": [
     "mongodb",
     "compass",
     "database",
     "GUI"
-  ]
+  ],
+  "devDependencies": {
+    "@mongodb-js/compass-components": "^1.35.2",
+    "@mongodb-js/tsconfig-compass": "^1.2.8",
+    "@mongodb-js/atlas-service": "^0.39.0",
+    "@mongodb-js/compass-workspaces": "https://github.com/haohanyang/compass/releases/download/v1.46.2/mongodb-js-compass-workspaces-0.35.0.tgz",
+    "@mongodb-js/compass-app-stores": "https://github.com/haohanyang/compass/releases/download/v1.46.2/mongodb-js-compass-app-stores-7.40.0.tgz",
+    "@mongodb-js/compass-data-modeling": "https://github.com/haohanyang/compass/releases/download/v1.46.2/mongodb-js-compass-data-modeling-1.4.0.tgz",
+    "hadron-app-registry": "^9.4.8",
+    "compass-preferences-model": "^2.36.0",
+    "@types/react": "^17.0.2",
+    "@types/react-dom": "^17.0.2",
+    "@vitejs/plugin-react": "^4.5.0",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "vite": "^6.3.5",
+    "vite-plugin-node-polyfills": "^0.23.0"
+  }
 }

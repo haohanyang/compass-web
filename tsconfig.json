@@ -1,11 +1,10 @@
 {
-    "extends": "@mongodb-js/tsconfig-compass/tsconfig.react.json",
-    "compilerOptions": {
-        "jsx": "react",
-        "outDir": "dist"
-    },
-    "include": [
-        "src/**/*",
-        "polyfills/**/*",
-    ],
+  "extends": "@mongodb-js/tsconfig-compass/tsconfig.react.json",
+  "compilerOptions": {
+    "jsx": "react",
+    "outDir": "dist",
+    "moduleResolution": "node16",
+    "module": "Node16"
+  },
+  "include": ["src/**/*"]
 }

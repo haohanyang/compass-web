@@ -7,13 +7,13 @@ import { Duplex } from 'stream';
  * used when running compass-web in a local sandbox, mms has their own
  * implementation
  */
+enum MESSAGE_TYPE {
+  JSON = 0x01,
+  BINARY = 0x02,
+}
+
 class Socket extends Duplex {
   private _ws: WebSocket | null = null;
-  private _setOptions: {
-    setKeepAlive?: { enabled?: boolean; initialDelay?: number };
-    setTimeout?: { timeout?: number };
-    setNoDelay?: { noDelay?: boolean };
-  } = {};
   constructor() {
     super();
   }
@@ -26,21 +26,22 @@ class Socket extends Duplex {
     lookup?: ConnectionOptions['lookup'];
     tls?: boolean;
   }) {
-    const { wsURL, ...atlasOptions } = lookup?.() ?? {};
-    console.log("ws url", wsURL)
-    this._ws = new WebSocket(wsURL ?? 'ws://' + location.host);
+    const { wsURL, ...atlasOptions } =
+      lookup?.() ?? ({} as { wsURL?: string; clusterName?: string });
+    this._ws = new WebSocket(wsURL ?? '/ws-proxy');
     this._ws.binaryType = 'arraybuffer';
     this._ws.addEventListener(
       'open',
       () => {
         const connectMsg = JSON.stringify({
-          connectOptions: options,
-          atlasOptions:
-            Object.keys(atlasOptions).length > 0 ? atlasOptions : undefined,
-          setOptions: this._setOptions,
+          port: options.port,
+          host: options.host,
+          tls: options.tls ?? false,
+          clusterName: atlasOptions.clusterName,
+          ok: 1,
         });
         setTimeout(() => {
-          this._ws?.send(connectMsg);
+          this._ws?.send(this.encodeStringMessageWithTypeByte(connectMsg));
         });
       },
       { once: true }
@@ -53,26 +54,23 @@ class Socket extends Duplex {
     });
     this._ws.addEventListener(
       'message',
-      ({ data }: MessageEvent<string | ArrayBuffer>) => {
-        if (typeof data === 'string') {
+      ({ data }: MessageEvent<ArrayBuffer>) => {
+        const dataView = new Uint8Array(data);
+        if (dataView[0] === 0x01) {
           try {
-            const { evt, error } = JSON.parse(data) as {
-              evt: string;
-              error?: Error;
-            };
-            setTimeout(() => {
-              this.emit(
-                evt,
-                evt === 'error' ? Object.assign(new Error(), error) : undefined
-              );
-            });
+            const res = this.decodeMessageWithTypeByte(dataView);
+            if (res.preMessageOk) {
+              setTimeout(() => {
+                this.emit(options.tls ? 'secureConnect' : 'connect');
+              });
+            }
           } catch (err) {
             // eslint-disable-next-line no-console
             console.error('error parsing proxy message "%s":', data, err);
           }
         } else {
           setTimeout(() => {
-            this.emit('data', Buffer.from(data));
+            this.emit('data', this.decodeMessageWithTypeByte(dataView));
           });
         }
       }
@@ -83,7 +81,7 @@ class Socket extends Duplex {
     // noop
   }
   _write(chunk: ArrayBufferLike, _encoding: BufferEncoding, cb: () => void) {
-    this._ws?.send(chunk);
+    this._ws?.send(this.encodeBinaryMessageWithTypeByte(new Uint8Array(chunk)));
     setTimeout(() => {
       cb();
     });
@@ -109,20 +107,46 @@ class Socket extends Duplex {
     this._ws?.close();
     return this;
   }
-  setKeepAlive(enabled = false, initialDelay = 0) {
-    this._setOptions.setKeepAlive = { enabled, initialDelay };
+  setKeepAlive() {
     return this;
   }
-  setTimeout(timeout: number, cb?: () => void) {
-    this._setOptions.setTimeout = { timeout };
-    if (cb) {
-      this.once('timeout', cb);
+  setTimeout() {
+    return this;
+  }
+  setNoDelay() {
+    return this;
+  }
+
+  encodeStringMessageWithTypeByte(message: string) {
+    const utf8Encoder = new TextEncoder();
+    const utf8Array = utf8Encoder.encode(message);
+    return this.encodeMessageWithTypeByte(utf8Array, MESSAGE_TYPE.JSON);
+  }
+
+  encodeBinaryMessageWithTypeByte(message: Uint8Array) {
+    return this.encodeMessageWithTypeByte(message, MESSAGE_TYPE.BINARY);
+  }
+
+  encodeMessageWithTypeByte(message: Uint8Array, type: MESSAGE_TYPE) {
+    const encoded = new Uint8Array(message.length + 1);
+    encoded[0] = type;
+    encoded.set(message, 1);
+    return encoded;
+  }
+
+  decodeMessageWithTypeByte(message: Uint8Array) {
+    const typeByte = message[0];
+    if (typeByte === MESSAGE_TYPE.JSON) {
+      const jsonBytes = message.subarray(1);
+      const textDecoder = new TextDecoder('utf-8');
+      const jsonStr = textDecoder.decode(jsonBytes);
+      return JSON.parse(jsonStr);
+    } else if (typeByte === MESSAGE_TYPE.BINARY) {
+      return message.subarray(1);
+    } else {
+      // eslint-disable-next-line no-console
+      console.error('message does not have valid type byte "%s"', message);
     }
-    return this;
-  }
-  setNoDelay(noDelay = true) {
-    this._setOptions.setNoDelay = { noDelay };
-    return this;
   }
 }
 
