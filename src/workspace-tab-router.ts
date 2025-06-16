@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import {
   getWorkspaceTabFromRoute,
   getRouteFromWorkspaceTab,
-} from '@mongodb-js/compass-web';
+} from './components/url-builder';
 import type {
   OpenWorkspaceOptions,
   WorkspaceTab,

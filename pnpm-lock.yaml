@@ -45,7 +45,6 @@ overrides:
   '@mongodb-js/compass-shell': link:./compass/packages/compass-shell
   '@mongodb-js/compass-sidebar': link:./compass/packages/compass-sidebar
   '@mongodb-js/compass-telemetry': link:./compass/packages/compass-telemetry
-  '@mongodb-js/compass-test-server': link:./compass/packages/compass-test-server
   '@mongodb-js/compass-user-data': link:./compass/packages/compass-user-data
   '@mongodb-js/compass-utils': link:./compass/packages/compass-utils
   '@mongodb-js/compass-web': link:./compass/packages/compass-web
@@ -97,15 +96,78 @@ importers:
         specifier: ^17.7.2
         version: 17.7.2
     devDependencies:
+      '@babel/runtime':
+        specifier: ^7.21.0
+        version: 7.27.6
+      '@mongodb-js/atlas-service':
+        specifier: link:compass/packages/atlas-service
+        version: link:compass/packages/atlas-service
+      '@mongodb-js/compass-aggregations':
+        specifier: link:compass/packages/compass-aggregations
+        version: link:compass/packages/compass-aggregations
       '@mongodb-js/compass-app-stores':
         specifier: link:compass/packages/compass-app-stores
         version: link:compass/packages/compass-app-stores
+      '@mongodb-js/compass-collection':
+        specifier: link:compass/packages/compass-collection
+        version: link:compass/packages/compass-collection
       '@mongodb-js/compass-components':
         specifier: link:compass/packages/compass-components
         version: link:compass/packages/compass-components
-      '@mongodb-js/compass-web':
-        specifier: link:compass/packages/compass-web
-        version: link:compass/packages/compass-web
+      '@mongodb-js/compass-connections':
+        specifier: link:compass/packages/compass-connections
+        version: link:compass/packages/compass-connections
+      '@mongodb-js/compass-crud':
+        specifier: link:compass/packages/compass-crud
+        version: link:compass/packages/compass-crud
+      '@mongodb-js/compass-data-modeling':
+        specifier: link:compass/packages/compass-data-modeling
+        version: link:compass/packages/compass-data-modeling
+      '@mongodb-js/compass-databases-collections':
+        specifier: link:compass/packages/databases-collections
+        version: link:compass/packages/databases-collections
+      '@mongodb-js/compass-explain-plan':
+        specifier: link:compass/packages/compass-explain-plan
+        version: link:compass/packages/compass-explain-plan
+      '@mongodb-js/compass-export-to-language':
+        specifier: link:compass/packages/compass-export-to-language
+        version: link:compass/packages/compass-export-to-language
+      '@mongodb-js/compass-field-store':
+        specifier: link:compass/packages/compass-field-store
+        version: link:compass/packages/compass-field-store
+      '@mongodb-js/compass-generative-ai':
+        specifier: link:compass/packages/compass-generative-ai
+        version: link:compass/packages/compass-generative-ai
+      '@mongodb-js/compass-global-writes':
+        specifier: link:compass/packages/compass-global-writes
+        version: link:compass/packages/compass-global-writes
+      '@mongodb-js/compass-indexes':
+        specifier: link:compass/packages/compass-indexes
+        version: link:compass/packages/compass-indexes
+      '@mongodb-js/compass-logging':
+        specifier: link:compass/packages/compass-logging
+        version: link:compass/packages/compass-logging
+      '@mongodb-js/compass-query-bar':
+        specifier: link:compass/packages/compass-query-bar
+        version: link:compass/packages/compass-query-bar
+      '@mongodb-js/compass-schema':
+        specifier: link:compass/packages/compass-schema
+        version: link:compass/packages/compass-schema
+      '@mongodb-js/compass-schema-validation':
+        specifier: link:compass/packages/compass-schema-validation
+        version: link:compass/packages/compass-schema-validation
+      '@mongodb-js/compass-settings':
+        specifier: link:compass/packages/compass-settings
+        version: link:compass/packages/compass-settings
+      '@mongodb-js/compass-sidebar':
+        specifier: link:compass/packages/compass-sidebar
+        version: link:compass/packages/compass-sidebar
+      '@mongodb-js/compass-telemetry':
+        specifier: link:compass/packages/compass-telemetry
+        version: link:compass/packages/compass-telemetry
+      '@mongodb-js/compass-welcome':
+        specifier: link:compass/packages/compass-welcome
+        version: link:compass/packages/compass-welcome
       '@mongodb-js/compass-workspaces':
         specifier: link:compass/packages/compass-workspaces
         version: link:compass/packages/compass-workspaces
@@ -115,6 +177,15 @@ importers:
       '@mongodb-js/devtools-proxy-support':
         specifier: ^0.4.4
         version: 0.4.4
+      '@mongodb-js/eslint-config-compass':
+        specifier: link:compass/configs/eslint-config-compass
+        version: link:compass/configs/eslint-config-compass
+      '@mongodb-js/mocha-config-compass':
+        specifier: link:compass/configs/mocha-config-compass
+        version: link:compass/configs/mocha-config-compass
+      '@mongodb-js/prettier-config-compass':
+        specifier: link:compass/configs/prettier-config-compass
+        version: link:compass/configs/prettier-config-compass
       '@mongodb-js/tsconfig-compass':
         specifier: link:compass/configs/tsconfig-compass
         version: link:compass/configs/tsconfig-compass
@@ -142,12 +213,18 @@ importers:
       crypto-browserify:
         specifier: ^3.12.0
         version: 3.12.1
+      hadron-app-registry:
+        specifier: link:compass/packages/hadron-app-registry
+        version: link:compass/packages/hadron-app-registry
       is-ip:
         specifier: ^5.0.1
         version: 5.0.1
       jose:
         specifier: ^6.0.11
         version: 6.0.11
+      mongodb-ns:
+        specifier: ^2.4.2
+        version: 2.4.2
       os-browserify:
         specifier: ^0.3.0
         version: 0.3.0
@@ -180,6 +257,10 @@ importers:
         version: 13.0.0
 
 packages:
+
+  '@babel/runtime@7.27.6':
+    resolution: {integrity: sha512-vbavdySgbTTrmFE+EsiqUTzlOr5bzlnJtUv9PynGCAKvfQqjIXbvFdumPM/GxMDfyuGMJaJAU6TO4zc1Jf1i8Q==}
+    engines: {node: '>=6.9.0'}
 
   '@fastify/accept-negotiator@2.0.1':
     resolution: {integrity: sha512-/c/TW2bO/v9JeEgoD/g1G5GxGeCF1Hafdf79WPmUlgYiBXummY0oX3VVq4yFkKKVBKDNlaDUYoab7g38RpPqCQ==}
@@ -999,6 +1080,9 @@ packages:
   mongodb-connection-string-url@3.0.2:
     resolution: {integrity: sha512-rMO7CGo/9BFwyZABcKAWL8UJwH/Kc2x0g72uhDWzG48URRax5TCIcJ7Rc3RZqffZzO/Gwff/jyKwCU9TN8gehA==}
 
+  mongodb-ns@2.4.2:
+    resolution: {integrity: sha512-gYJjEYG4v4a1WSXgUf81OBoBRlj+Z1SlnQVO392fC/4a1CN7CLWDITajZWPFTPh/yRozYk6sHHtZwZmQhodBEA==}
+
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
@@ -1469,6 +1553,8 @@ packages:
     engines: {node: '>=12'}
 
 snapshots:
+
+  '@babel/runtime@7.27.6': {}
 
   '@fastify/accept-negotiator@2.0.1': {}
 
@@ -2412,6 +2498,8 @@ snapshots:
     dependencies:
       '@types/whatwg-url': 11.0.5
       whatwg-url: 13.0.0
+
+  mongodb-ns@2.4.2: {}
 
   ms@2.1.3: {}
 

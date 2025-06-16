@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import { CompassWeb } from '@mongodb-js/compass-web';
+import { CompassWeb } from './components/compass-web';
 import {
   resetGlobalCSS,
   css,

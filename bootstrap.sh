@@ -14,11 +14,8 @@ node_modules/.bin/lerna run bootstrap --stream \
     --ignore @mongodb-js/testing-library-compass \
     --ignore compass-e2e-tests \
     --ignore @mongodb-js/compass-smoke-tests \
-    --ignore @mongodb-js/compass-test-server
-
-npm run compile --workspace=@mongodb-js/compass-web 2>&1 || true
-
-npm run typescript --workspace=@mongodb-js/compass-web
+    --ignore @mongodb-js/compass-test-server \
+    --ignore @mongodb-js/compass-web
 
 # Avoid multiple react versions
 rm -rf node_modules/react node_modules/react-dom
