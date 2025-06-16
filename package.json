@@ -59,25 +59,11 @@
     "@mongodb-js/prettier-config-compass": "^1.2.8",
     "@mongodb-js/tsconfig-compass": "^1.2.8",
     "@mongodb-js/webpack-config-compass": "^1.6.8",
+    "compass-preferences-model": "^2.36.0",
+    "hadron-app-registry": "^9.4.8",
     "@types/react": "^17.0.2",
     "@types/react-dom": "^17.0.2",
-    "buffer": "^6.0.3",
-    "compass-preferences-model": "^2.36.0",
-    "copy-webpack-plugin": "^13.0.0",
-    "core-js": "^3.17.3",
-    "crypto-browserify": "^3.12.0",
-    "hadron-app-registry": "^9.4.8",
-    "is-ip": "^5.0.1",
-    "jose": "^6.0.11",
-    "mongodb-ns": "^2.4.2",
-    "os-browserify": "^0.3.0",
-    "path-browserify": "^1.0.1",
-    "process": "^0.11.10",
-    "readable-stream": "^4.5.0",
-    "timers-browserify": "^2.0.12",
-    "util": "^0.12.5",
-    "vm-browserify": "^1.1.2",
-    "whatwg-url": "^13.0.0"
+    "copy-webpack-plugin": "^13.0.0"
   },
   "pnpm": {
     "overrides": {
@@ -143,8 +129,7 @@
       "mongodb-explain-compat": "link:./compass/packages/mongodb-explain-compat",
       "mongodb-query-util": "link:./compass/packages/mongodb-query-util",
       "@mongodb-js/my-queries-storage": "link:./compass/packages/my-queries-storage",
-      "@mongodb-js/reflux-state-mixin": "link:./compass/packages/reflux-state-mixin",
-      "electron": "file:./electron"
+      "@mongodb-js/reflux-state-mixin": "link:./compass/packages/reflux-state-mixin"
     }
   },
   "keywords": [

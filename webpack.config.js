@@ -22,6 +22,14 @@ module.exports = (env, args) => {
     ],
     resolve: {
       alias: {
+        'core-js/modules': path.resolve(
+          __dirname,
+          'compass',
+          'node_modules',
+          'core-js',
+          'modules'
+        ),
+        'mongodb-ns': resolveFromCompass('mongodb-ns'),
         'react/jsx-runtime': resolveFromCompass('react/jsx-runtime'),
         react: resolveFromCompass('react'),
         'react-dom': resolveFromCompass('react-dom'),
