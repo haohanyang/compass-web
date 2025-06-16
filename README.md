@@ -64,7 +64,7 @@ Clone the repo and fetch the upstream dependency [compass](https://github.com/mo
 
 ```bash
 git clone https://github.com/haohanyang/compass-web.git
-cd compass-web && git submodule update --init --recursive
+cd compass-web && git submodule update --init --recursive --single-branch --depth 1
 ```
 
 Build the dependencies
