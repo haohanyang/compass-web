@@ -53,10 +53,6 @@ const args = yargs(hideBin(process.argv))
     demandOption: true,
   })
   .version(require('./package.json').version)
-  .option('version', {
-    type: 'boolean',
-    describe: 'Current compass-web version',
-  })
   .options('port', {
     type: 'number',
     description: 'Port to run the server on',
@@ -89,6 +85,11 @@ const args = yargs(hideBin(process.argv))
   .option('basic-auth-password', {
     type: 'string',
     description: 'Password for Basic HTTP authentication scheme',
+  })
+  .option('app-name', {
+    type: 'string',
+    description: 'Name of the application',
+    default: 'Compass Web',
   })
   .parse();
 
@@ -246,6 +247,7 @@ fastify.after(() => {
         reply.send({
           orgId: args.orgId,
           projectId: args.projectId,
+          appName: args.appName,
         });
       } else {
         reply.status(404).send({
