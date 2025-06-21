@@ -22,6 +22,7 @@ module.exports = (env, args) => {
         'process.env.ENABLE_INFO': args.mode != 'production',
       }),
     ],
+    devtool: args.mode == 'production' ? false : 'source-map',
     resolve: {
       alias: {
         'core-js/modules': path.resolve(
