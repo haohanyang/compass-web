@@ -17,7 +17,35 @@ import {
 } from '../../compass/packages/compass-preferences-model/src/preferences-schema';
 import { getActiveUser } from '../../compass/packages/compass-preferences-model/src/utils';
 
-const editablePreferences: (keyof UserPreferences)[] = ['theme'];
+const editablePreferences: (keyof UserPreferences)[] = [
+  'theme',
+  'defaultSortOrder',
+];
+
+function persistEditablePreferences(preferences: UserPreferences) {
+  localStorage.setItem('compass-web:theme', preferences['theme'] ?? 'LIGHT');
+  localStorage.setItem(
+    'compass-web:defaultSortOrder',
+    preferences['defaultSortOrder'] ?? ''
+  );
+}
+
+function loadPreferences(preferences: UserPreferences) {
+  const theme = localStorage.getItem('compass-web:theme') ?? '';
+  if (['DARK', 'LIGHT', 'OS_THEME'].includes(theme)) {
+    // @ts-ignore
+    preferences['theme'] = theme;
+  }
+
+  const defaultSortOrder =
+    localStorage.getItem('compass-web:defaultSortOrder') ?? '';
+  if (
+    ['{ $natural: -1 }', '{ _id: 1 }', '{ _id: -1 }'].includes(defaultSortOrder)
+  ) {
+    // @ts-ignore
+    preferences['defaultSortOrder'] = defaultSortOrder;
+  }
+}
 
 class CompassWebPreferencesAccess implements PreferencesAccess {
   private _preferences: Preferences;
@@ -100,13 +128,10 @@ class CompassWebPreferencesStorage implements PreferencesStorage {
   }
 
   setup(): Promise<void> {
-    const theme = localStorage.getItem('compass-web:theme') ?? '';
-    if (['DARK', 'LIGHT', 'OS_THEME'].includes(theme)) {
-      // @ts-ignore
-      this.preferences['theme'] = theme;
-    }
+    loadPreferences(this.preferences);
     return Promise.resolve();
   }
+
   getPreferences(): StoredPreferences {
     return this.preferences;
   }
@@ -117,8 +142,7 @@ class CompassWebPreferencesStorage implements PreferencesStorage {
       ...attributes,
     };
 
-    localStorage.setItem('compass-web:theme', this.preferences['theme']);
-
+    persistEditablePreferences(this.preferences);
     return Promise.resolve();
   }
 }
