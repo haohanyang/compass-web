@@ -52,6 +52,7 @@ const args = yargs(hideBin(process.argv))
       'MongoDB connection string, e.g. mongodb://localhost:27017. Multiple connections can be specified by separating them with whitespaces.',
     demandOption: true,
   })
+  .version(require('./package.json').version)
   .option('version', {
     type: 'boolean',
     describe: 'Current compass-web version',
@@ -90,11 +91,6 @@ const args = yargs(hideBin(process.argv))
     description: 'Password for Basic HTTP authentication scheme',
   })
   .parse();
-
-if (args.version) {
-  console.log(require('./package.json').version);
-  process.exit(0);
-}
 
 let mongoURIStrings = args.mongoUri.trim().split(/\s+/);
 const mongoURIs = [];
