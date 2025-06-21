@@ -43,6 +43,7 @@
     "@mongodb-js/compass-field-store": "^9.29.0",
     "@mongodb-js/compass-generative-ai": "^0.34.0",
     "@mongodb-js/compass-global-writes": "^1.13.0",
+    "@mongodb-js/compass-import-export": "^7.53.0",
     "@mongodb-js/compass-indexes": "^5.53.0",
     "@mongodb-js/compass-logging": "^1.6.8",
     "@mongodb-js/compass-query-bar": "^8.55.0",
@@ -58,11 +59,11 @@
     "@mongodb-js/mocha-config-compass": "^1.6.8",
     "@mongodb-js/prettier-config-compass": "^1.2.8",
     "@mongodb-js/webpack-config-compass": "^1.6.8",
-    "compass-preferences-model": "^2.36.0",
-    "hadron-app-registry": "^9.4.8",
     "@types/react": "^17.0.2",
     "@types/react-dom": "^17.0.2",
-    "copy-webpack-plugin": "^13.0.0"
+    "compass-preferences-model": "^2.36.0",
+    "copy-webpack-plugin": "^13.0.0",
+    "hadron-app-registry": "^9.4.8"
   },
   "pnpm": {
     "overrides": {

@@ -38,6 +38,7 @@ const initialPreferences: Partial<AllPreferences> = {
   optInDataExplorerGenAIFeatures: false,
   enableDataModeling: false,
   trackUsageStatistics: false,
+  enableImportExport: true,
 };
 
 resetGlobalCSS();
