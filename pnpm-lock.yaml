@@ -137,6 +137,9 @@ importers:
       '@mongodb-js/compass-global-writes':
         specifier: link:compass/packages/compass-global-writes
         version: link:compass/packages/compass-global-writes
+      '@mongodb-js/compass-import-export':
+        specifier: link:compass/packages/compass-import-export
+        version: link:compass/packages/compass-import-export
       '@mongodb-js/compass-indexes':
         specifier: link:compass/packages/compass-indexes
         version: link:compass/packages/compass-indexes
