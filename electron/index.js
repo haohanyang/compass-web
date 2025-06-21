@@ -1,3 +1,0 @@
-function getElectronPath() {
-  return "";
-}
