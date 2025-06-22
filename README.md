@@ -5,7 +5,7 @@
 
 A port of the MongoDB Compass to Web. The frontend is rebuilt and re-packaged from the original [@mongodb-js/compass-web](https://www.npmjs.com/package/@mongodb-js/compass-web). It provides an easy way to view and interact with your databases from a browser, while keeping most of the MongoDB Compass features.
 
-## ![screenshot1](/images/screenshot3.png)
+## ![screenshot](/images/screenshot3.png)
 
 ## 📦 Installation
 
@@ -40,7 +40,6 @@ Use Docker:
 
 ```
 docker run -it -p 8080:8080 -e CW_MONGO_URI="mongodb://localhost:27017" haohanyang/compass-web
-
 ```
 
 Check an example [docker-compose.yaml](./docker-compose.yaml) file if you want to use Docker Compose.
@@ -49,14 +48,24 @@ Check an example [docker-compose.yaml](./docker-compose.yaml) file if you want t
 
 You can configure `compass-web` using command-line arguments or environment variables (prefixed with `CW_`).
 
-| Parameter      | Type   | Env Variable    | Description                                                                         | Default              |
-| -------------- | ------ | --------------- | ----------------------------------------------------------------------------------- | -------------------- |
-| `--mongo-uri`  | string | `CW_MONGO_URI`  | **Required.** MongoDB connection string(s). Separate multiple URIs with whitespace. | _Required_           |
-| `--port`       | number | `CW_PORT`       | Port to run the server on.                                                          | `8080`               |
-| `--host`       | string | `CW_HOST`       | Host to run the server on.                                                          | `localhost`          |
-| `--org-id`     | string | `CW_ORG_ID`     | Organization ID associated with the connection.                                     | `default-org-id`     |
-| `--project-id` | string | `CW_PROJECT_ID` | Project ID associated with the connection.                                          | `default-project-id` |
-| `--cluster-id` | string | `CW_CLUSTER_ID` | Cluster ID associated with the connection.                                          | `default-cluster-id` |
+| Parameter               | Type   | Env Variable             | Description                                                                         | Default              |
+| ----------------------- | ------ | ------------------------ | ----------------------------------------------------------------------------------- | -------------------- |
+| `--mongo-uri`           | string | `CW_MONGO_URI`           | **Required.** MongoDB connection string(s). Separate multiple URIs with whitespace. | _Required_           |
+| `--port`                | number | `CW_PORT`                | Port to run the server on.                                                          | `8080`               |
+| `--host`                | string | `CW_HOST`                | Host to run the server on.                                                          | `localhost`          |
+| `--app-name`            | string | `CW_APP_NAME`            | Name of the application on.                                                         | `Compass Web`        |
+| `--org-id`              | string | `CW_ORG_ID`              | Organization ID associated with the connection.                                     | `default-org-id`     |
+| `--project-id`          | string | `CW_PROJECT_ID`          | Project ID associated with the connection.                                          | `default-project-id` |
+| `--cluster-id`          | string | `CW_CLUSTER_ID`          | Cluster ID associated with the connection.                                          | `default-cluster-id` |
+| `--basic-auth-username` | string | `CW_BASIC_AUTH_USERNAME` | Username for Basic HTTP authentication scheme.                                      | `null`               |
+| `--basic-auth-password` | string | `CW_BASIC_AUTH_PASSWORD` | Password for Basic HTTP authentication scheme.                                      | `null`               |
+
+## Settings
+
+Here are editable user preferences you can configure on **Settings** in the UI:
+
+- Theme(dark/light)
+- Default Sort for Query Bar
 
 ## Build
 
