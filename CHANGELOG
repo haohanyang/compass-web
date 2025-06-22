@@ -1,3 +1,10 @@
+## 0.2.1 - 2025-06-22
+
+### Added
+
+- Added new cli options `app-name`, `basic-auth-username` and `basic-auth-password`
+- Added theme and default query sort settings on UI.
+
 ## 0.2.0 - 2025-06-15
 
 ### Changed
