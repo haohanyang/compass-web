@@ -9,8 +9,29 @@ function resolveFromCompass(name) {
   });
 }
 
+function localPolyfill(name) {
+  return path.resolve(
+    __dirname,
+    'src',
+    'polyfills',
+    ...name.split('/'),
+    'index.js'
+  );
+}
+
 module.exports = (env, args) => {
-  const config = merge(compassWebConfig(env, args), {
+  const config = compassWebConfig(env, args);
+
+  delete config.externals;
+  delete config.resolve.alias.stream;
+
+  config.output = {
+    path: config.output.path,
+    filename: config.output.filename,
+    assetModuleFilename: config.output.assetModuleFilename,
+  };
+
+  return merge(config, {
     context: __dirname,
     entry: path.resolve(__dirname, 'src', 'index.tsx'),
     plugins: [
@@ -48,20 +69,14 @@ module.exports = (env, args) => {
           'tls',
           'index.ts'
         ),
+        'fs/promises': localPolyfill('fs/promises'),
+        'stream/promises': localPolyfill('stream/promises'),
+        fs: localPolyfill('fs'),
+        stream: localPolyfill('stream'),
       },
     },
     performance: {
       hints: 'warning',
     },
   });
-
-  delete config.externals;
-
-  config.output = {
-    path: config.output.path,
-    filename: config.output.filename,
-    assetModuleFilename: config.output.assetModuleFilename,
-  };
-
-  return config;
 };

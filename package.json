@@ -63,7 +63,8 @@
     "@types/react-dom": "^17.0.2",
     "compass-preferences-model": "^2.36.0",
     "copy-webpack-plugin": "^13.0.0",
-    "hadron-app-registry": "^9.4.8"
+    "hadron-app-registry": "^9.4.8",
+    "readable-stream": "^4.7.0"
   },
   "pnpm": {
     "overrides": {
