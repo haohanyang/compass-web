@@ -37,7 +37,7 @@ import { CompassGlobalWritesPlugin } from '@mongodb-js/compass-global-writes';
 import { CompassGenerativeAIPlugin } from '@mongodb-js/compass-generative-ai';
 import ExplainPlanCollectionTabModal from '@mongodb-js/compass-explain-plan';
 import ExportToLanguageCollectionTabModal from '@mongodb-js/compass-export-to-language';
-import { ExportPlugin } from '@mongodb-js/compass-import-export';
+import { ExportPlugin } from './export-plugin';
 import {
   CreateNamespacePlugin,
   DropNamespacePlugin,
