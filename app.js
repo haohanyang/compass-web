@@ -285,6 +285,14 @@ fastify.after(() => {
     }
   );
 
+  fastify.post('/export-csv', function handler(request, reply) {
+    reply.send('ok');
+  });
+
+  fastify.post('/export-json', function handler(request, reply) {
+    reply.send('ok');
+  });
+
   fastify.setNotFoundHandler(function (request, reply) {
     reply.sendFile('index.html');
   });

@@ -60,6 +60,8 @@ module.exports = (env, args) => {
         '@babel/runtime/helpers/extends': resolveFromCompass(
           '@babel/runtime/helpers/extends'
         ),
+        'react-redux': resolveFromCompass('react-redux'),
+        lodash: path.resolve(__dirname, 'compass', 'node_modules', 'lodash'),
         tls: path.resolve(
           __dirname,
           'compass',

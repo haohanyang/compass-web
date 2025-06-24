@@ -5,7 +5,7 @@ import { preferencesLocator } from 'compass-preferences-model/provider';
 import { createLoggerLocator } from '@mongodb-js/compass-logging/provider';
 import { telemetryLocator } from '@mongodb-js/compass-telemetry/provider';
 import { connectionsLocator } from '@mongodb-js/compass-connections/provider';
-import { ExportModal } from '../../compass/packages/compass-import-export/src/components/export-modal';
+import { ExportModal } from './export-modal';
 import ExportInProgressModal from '../../compass/packages/compass-import-export/src/components/export-in-progress-modal';
 
 function ExportPluginComponent() {

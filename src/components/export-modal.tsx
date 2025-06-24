@@ -1,9 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useState,
-} from 'react';
+import React, { useCallback, useLayoutEffect, useState } from 'react';
 import { connect } from 'react-redux';
 import {
   Banner,
@@ -15,7 +10,6 @@ import {
   Modal,
   css,
   spacing,
-  createElectronFileInputBackend,
 } from '@mongodb-js/compass-components';
 
 import {
@@ -25,11 +19,8 @@ import {
   backToSelectFieldsToExport,
   readyToExport,
   runExport,
-} from '../../compass/packages/compass-import-export/src/modules/export';
-import type {
-  ExportStatus,
-  FieldsToExportOption,
-} from '../../compass/packages/compass-import-export/src/modules/export';
+} from './export';
+import type { ExportStatus, FieldsToExportOption } from './export';
 import type { RootExportState } from '../../compass/packages/compass-import-export/src/stores/export-store';
 import { SelectFileType } from '../../compass/packages/compass-import-export/src/components/select-file-type';
 import { ExportSelectFields } from '../../compass/packages/compass-import-export/src/components/export-select-fields';
@@ -117,7 +108,6 @@ type ExportModalProps = {
   selectFieldsToExport: () => void;
   readyToExport: (selectedFieldOption?: 'all-fields') => void;
   runExport: (exportOptions: {
-    filePath: string;
     fileType: 'csv' | 'json';
     jsonFormatVariant: ExportJSONFormat;
   }) => void;
@@ -191,7 +181,6 @@ function ExportModal({
   const onSelectExportFilePath = useCallback(
     (filePath: string) => {
       runExport({
-        filePath,
         fileType,
         jsonFormatVariant,
       });
@@ -200,53 +189,11 @@ function ExportModal({
   );
 
   const onClickExport = useCallback(() => {
-    // eslint-disable-next-line @typescript-eslint/consistent-type-imports, @typescript-eslint/no-var-requires
-    const electron: typeof import('@electron/remote') = require('@electron/remote');
-    const fileBackend = createElectronFileInputBackend(electron, null)();
-
-    fileBackend.onFilesChosen((files: string[]) => {
-      if (files.length > 0) {
-        onSelectExportFilePath(files[0]);
-      }
-    });
-
-    fileBackend.openFileChooser({
-      multi: false,
-      mode: 'save',
-      title: 'Target output file',
-      defaultPath: `${ns}.${fileType}`,
-      buttonLabel: 'Select',
-      filters: [
-        { name: fileType, extensions: [fileType] },
-        { name: 'All Files', extensions: ['*'] },
-      ],
+    runExport({
+      fileType,
+      jsonFormatVariant,
     });
   }, [fileType, ns, onSelectExportFilePath]);
-
-  const onSelectExportFileNameEvent = useCallback(
-    ({ detail: filePath }: CustomEventInit<string>) => {
-      onSelectExportFilePath(filePath!);
-    },
-    [onSelectExportFilePath]
-  );
-
-  useEffect(() => {
-    if (isOpen) {
-      // For e2e testing we can't set the value of a file output
-      // for security reasons, so we listen to a dom event that sets it.
-      // https://github.com/electron-userland/spectron/issues/23
-      document.addEventListener(
-        'selectExportFileName',
-        onSelectExportFileNameEvent
-      );
-      return () => {
-        document.removeEventListener(
-          'selectExportFileName',
-          onSelectExportFileNameEvent
-        );
-      };
-    }
-  }, [isOpen, onSelectExportFileNameEvent]);
 
   useLayoutEffect(() => {
     if (isOpen) {
