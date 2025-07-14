@@ -11,16 +11,12 @@ import WorkspacesPlugin, {
   WorkspacesProvider,
 } from '@mongodb-js/compass-workspaces';
 import { CompassSettingsPlugin } from '@mongodb-js/compass-settings';
+import { WorkspaceTab as ShellWorkspaceTab } from '@mongodb-js/compass-shell';
 import {
   DatabasesWorkspaceTab,
   CollectionsWorkspaceTab,
 } from '@mongodb-js/compass-databases-collections';
-import {
-  CompassComponentsProvider,
-  FileInputBackendProvider,
-  css,
-} from '@mongodb-js/compass-components';
-import { type FileInputBackend } from '../../compass/packages/compass-components/src/components/file-input';
+import { CompassComponentsProvider, css } from '@mongodb-js/compass-components';
 import {
   WorkspaceTab as CollectionWorkspace,
   CollectionTabsProvider,
@@ -126,6 +122,7 @@ function CompassWorkspace({
         CollectionsWorkspaceTab,
         CollectionWorkspace,
         DataModelingWorkspace,
+        ShellWorkspaceTab,
       ]}
     >
       <CollectionTabsProvider

@@ -40,6 +40,7 @@ const initialPreferences: Partial<AllPreferences> = {
   enableDataModeling: false,
   trackUsageStatistics: false,
   enableImportExport: true,
+  enableShell: true,
 };
 
 resetGlobalCSS();

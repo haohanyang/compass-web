@@ -113,6 +113,7 @@ module.exports = (env, args) => {
         '@leafygreen-ui/emotion': resolveFromCompass('@leafygreen-ui/emotion'),
         '@leafygreen-ui/palette': resolveFromCompass('@leafygreen-ui/palette'),
         '@leafygreen-ui/tokens': resolveFromCompass('@leafygreen-ui/tokens'),
+        'worker-runtime': localPolyfill('worker-runtime'),
       },
     },
     performance: {

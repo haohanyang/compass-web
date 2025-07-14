@@ -7,6 +7,8 @@ export ELECTRON_SKIP_BINARY_DOWNLOAD=1
 
 cd compass
 
+git apply ../patches/compass-shell.patch
+
 npm ci
 
 node_modules/.bin/lerna run bootstrap --stream \
