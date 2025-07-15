@@ -1,5 +1,4 @@
 import { EventEmitter } from 'events';
-import { WorkerRuntime } from '@mongosh/node-runtime-worker-thread';
 
 export class WorkerRuntime {
   constructor(uri, driverOptions, cliOptions, workerOptions, eventEmitter) {}

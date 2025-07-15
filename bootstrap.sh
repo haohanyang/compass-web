@@ -5,9 +5,11 @@ set -e
 export ELECTRON_OVERRIDE_DIST_PATH="/dev/null"
 export ELECTRON_SKIP_BINARY_DOWNLOAD=1
 
+latest_patch=$(ls patches | sort -n | tail -1)
+
 cd compass
 
-git apply ../patches/compass-shell.patch
+git apply ../patches/$latest_patch
 
 npm ci
 
