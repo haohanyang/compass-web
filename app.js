@@ -5,6 +5,7 @@ const path = require('path');
 const net = require('net');
 const tls = require('tls');
 const crypto = require('crypto');
+const dns = require('dns').promises;
 const { Writable } = require('stream');
 const fastify = require('fastify')({
   logger: true,
@@ -99,7 +100,7 @@ const args = yargs(hideBin(process.argv))
 
 let mongoURIStrings = args.mongoUri.trim().split(/\s+/);
 /**
- * @type {Array<{uri: ConnectionString, id: string}>}
+ * @type {Array<{uri: ConnectionString, raw: string, id: string, clientConnectionString?: string}>}
  */
 const mongoURIs = [];
 
@@ -116,6 +117,7 @@ mongoURIStrings.forEach((uri, index) => {
 
     mongoURIs.push({
       uri: mongoUri,
+      raw: uri,
       id: crypto.randomBytes(8).toString('hex'),
     });
   } catch (err) {
@@ -129,6 +131,97 @@ if (urlParsingError) {
   console.error(urlParsingError);
   process.exit(1);
 }
+
+// Create a client-safe connection string that avoids problematic SRV parsing in the frontend.
+// The compass frontend has code paths that assume hosts array exists when parsing connection strings.
+// For SRV URIs, we'll resolve the actual hosts and ports via DNS, then create a standard URI.
+async function createClientSafeConnectionString(raw) {
+  try {
+    const cs = new ConnectionString(raw);
+    console.log('Parsing connection string:', raw);
+    console.log('Parsed CS - protocol:', cs.protocol, 'hostname:', cs.hostname, 'hosts:', cs.hosts);
+
+    const isSrv = cs.protocol && cs.protocol.includes('srv');
+
+    if (!isSrv) {
+      return raw; // Non-SRV URIs are fine as-is
+    }
+
+    // For SRV URIs, resolve the actual hosts and ports
+    // Some versions of mongodb-connection-string-url use placeholder for hostname
+    // but populate hosts array correctly, so prefer hosts[0] over hostname
+    let hostname = cs.hostname;
+    if (!hostname || hostname === '__this_is_a_placeholder__') {
+      if (cs.hosts && cs.hosts.length > 0) {
+        hostname = cs.hosts[0];
+        console.log('Using hostname from hosts array:', hostname);
+      } else {
+        console.log('No valid hostname found, using original connection string');
+        return raw;
+      }
+    }
+
+    try {
+      const srvRecords = await dns.resolveSrv(`_mongodb._tcp.${hostname}`);
+      if (!Array.isArray(srvRecords) || srvRecords.length === 0) {
+        // Fallback to hostname with default port if SRV resolution fails
+        const fallbackHost = `${hostname}:27017`;
+        const hostList = [fallbackHost];
+
+        let auth = '';
+        if (cs.username) {
+          auth += encodeURIComponent(cs.username);
+          if (cs.password) auth += `:${encodeURIComponent(cs.password)}`;
+          auth += '@';
+        }
+
+        const pathname = cs.pathname || '';
+        const params = cs.searchParams?.toString() || '';
+        const query = params ? `?${params}` : '';
+
+        return `mongodb://${auth}${hostList.join(',')}${pathname}${query}`;
+      }
+
+      // Use the resolved SRV records
+      const hostList = srvRecords.map((record) => `${record.name}:${record.port}`);
+
+      let auth = '';
+      if (cs.username) {
+        auth += encodeURIComponent(cs.username);
+        if (cs.password) auth += `:${encodeURIComponent(cs.password)}`;
+        auth += '@';
+      }
+
+      const pathname = cs.pathname || '';
+      const params = cs.searchParams?.toString() || '';
+      const query = params ? `?${params}` : '';
+
+      return `mongodb://${auth}${hostList.join(',')}${pathname}${query}`;
+    } catch (dnsError) {
+      console.warn('Failed to resolve SRV record for', hostname, ':', dnsError.message);
+      return raw; // Fallback to original if DNS resolution fails
+    }
+  } catch (_e) {
+    return raw; // Fallback to original if parsing fails
+  }
+}
+
+// Precompute client-safe connection strings
+async function initializeClientSafeConnectionStrings() {
+  await Promise.all(
+    mongoURIs.map(async (entry) => {
+      entry.clientConnectionString = await createClientSafeConnectionString(entry.raw);
+      console.log(`Converted connection string for ${entry.id}:`);
+      console.log(`  Original: ${entry.raw}`);
+      console.log(`  Client-safe: ${entry.clientConnectionString}`);
+    })
+  );
+}
+
+// Initialize connection strings
+initializeClientSafeConnectionStrings().catch((err) => {
+  console.error('Failed to initialize client-safe connection strings:', err);
+});
 
 // Validate basic auth settings
 let basicAuth = null;
@@ -378,16 +471,16 @@ fastify.after(() => {
     '/explorer/v1/groups/:projectId/clusters/connectionInfo',
     (request, reply) => {
       reply.send(
-        mongoURIs.map(({ uri, id }) => ({
+        mongoURIs.map(({ uri, id, clientConnectionString }) => ({
           id: id,
           connectionOptions: {
-            connectionString: uri.href,
+            connectionString: clientConnectionString || uri.href,
           },
           atlasMetadata: {
             orgId: args.orgId,
             projectId: args.projectId,
             clusterUniqueId: args.clusterId,
-            clusterName: uri.hosts[0],
+            clusterName: (uri.hosts && uri.hosts[0]) || uri.hostname || 'unknown-cluster',
             clusterType: 'REPLICASET',
             clusterState: 'IDLE',
             metricsId: 'metricsid',
