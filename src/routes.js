@@ -409,19 +409,22 @@ function registerRoutes(instance) {
  */
 async function createClientSafeConnectionString(cs) {
   try {
-    const isSrv = cs.protocol && cs.protocol.includes('srv');
+    const isSrv = cs.isSRV;
 
     if (!isSrv) {
       return cs.href; // Non-SRV URIs are fine as-is
     }
 
-    const res = await resolveSRVRecord(parseOptions(cs.toString()));
+    const res = await resolveSRVRecord(parseOptions(cs.href));
     cs.protocol = 'mongodb';
-    cs.isSRV = false;
     cs.hosts = res.map((address) => address.toString());
 
     return cs.toString();
-  } catch (_e) {
+  } catch (err) {
+    console.error(
+      `Failed to create client safe connection string: ${cs.redact().href}`,
+      err
+    );
     return cs.href; // Fallback to original if SRV resolution fails
   }
 }
