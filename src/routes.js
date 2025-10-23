@@ -395,6 +395,46 @@ function registerRoutes(instance) {
     }
   );
 
+  // AI features
+  instance.post(
+    '/settings/optInDataExplorerGenAIFeatures',
+    (request, reply) => {
+      reply.send({ ok: true });
+    }
+  );
+
+  instance.post(
+    '/ai/v1/groups/:projectId/mql-query',
+    async (request, reply) => {
+      const requestId = request.params.request_id;
+      if (request.params.projectId !== args.projectId) {
+        reply.status(400).send({ error: 'Project ID mismatch' });
+      }
+
+      /*
+      Example request body:
+       {
+        userInput: 'all listings that have at least 2 bedrooms',
+        collectionName: 'listingsAndReviews',
+        databaseName: 'sample_airbnb',
+        schema: { ... }
+      }
+      */
+
+      reply.send({
+        content: {
+          query: {
+            filter: '{}',
+            limit: null,
+            project: null,
+            skip: null,
+            sort: null,
+          },
+        },
+      });
+    }
+  );
+
   instance.setNotFoundHandler((request, reply) => {
     const csrfToken = reply.generateCsrf();
     reply.view('index.eta', { csrfToken, appName: args.appName });
