@@ -1,6 +1,9 @@
 const crypto = require('crypto');
 const { Writable } = require('stream');
-const { resolveSRVRecord } = require('mongodb/lib/connection_string');
+const {
+  resolveSRVRecord,
+  parseOptions,
+} = require('mongodb/lib/connection_string');
 const { MongoDBNamespace } = require('mongodb/lib/utils');
 const DataService = require('./data-service');
 const {
