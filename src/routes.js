@@ -416,10 +416,12 @@ async function createClientSafeConnectionString(cs) {
     }
 
     const res = await resolveSRVRecord(parseOptions(cs.href));
-    cs.protocol = 'mongodb';
-    cs.hosts = res.map((address) => address.toString());
 
-    return cs.toString();
+    const csCopy = cs.clone();
+    csCopy.protocol = 'mongodb';
+    csCopy.hosts = res.map((address) => address.toString());
+
+    return csCopy.toString();
   } catch (err) {
     console.error(
       `Failed to create client safe connection string: ${cs.redact().href}`,
