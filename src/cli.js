@@ -54,6 +54,10 @@ function readCliArgs() {
       description: 'Name of the application',
       default: 'Compass Web',
     })
+    .option('openai-api-key', {
+      type: 'string',
+      description: 'OpenAI API key for GenAI services',
+    })
     .parse();
 
   let mongoURIStrings = args.mongoUri.trim().split(/\s+/);

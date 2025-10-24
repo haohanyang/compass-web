@@ -44,6 +44,8 @@ fastify.register(require('@fastify/websocket'));
 
 fastify.register(require('@fastify/cookie'));
 
+fastify.register(require('@fastify/formbody'));
+
 // CSRF protection
 fastify.register(require('@fastify/csrf-protection'), {
   getToken: (req) => {
