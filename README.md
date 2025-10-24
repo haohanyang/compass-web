@@ -54,6 +54,9 @@ npx compass-web --mongo-uri "mongodb://localhost:27017"
 compass-web --mongo-uri "mongodb://localhost:27017 mongodb+srv://myusername:secrets@default-cluster.mongodb.net/?retryWrites=true&w=majority&appName=default-cluster"
 ```
 
+> [!NOTE]
+> You may need to add `tls=true` to your connection string if using Mongo SRV scheme.
+
 Use Docker:
 
 ```

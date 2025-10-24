@@ -1,3 +1,9 @@
+## 0.2.8 - 2025-10-24
+
+### Changed
+
+- Fixed bugs in resolving SRV records for Azure Cosmos DB
+
 ## 0.2.7 - 2025-10-19
 
 ### Changed
