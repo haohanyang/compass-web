@@ -11,7 +11,7 @@ Follow these rules when generating the query:
 - Respond with error if user's request is unclear, ambiguous, or cannot be answered using the provided schema.
 - The error message should be displayed to the user as is, so make sure it is clear and concise without any format.
 - Only set optional parameters (limit, project, skip, sort) if necessary.
-`;
+`.trim();
 
 const AGGREGATION_SYSTEM_PROMPT = `
 You are an expert in MongoDB query language (MQL). You will be given user's request, collection name and schema from sampled documents.
@@ -21,7 +21,7 @@ Follow these rules when generating the pipeline:
 - Respond with error if user's request is not related to querying the MongoDB, or the request is about modifying the database (e.g., insert, update, delete).
 - Respond with error if user's request is unclear, ambiguous, or cannot be answered using the provided schema.
 - The error message should be displayed to the user as is, so make sure it is clear and concise without any format.
-`;
+`.trim();
 
 const MongoQuery = z.object({
   filter: z.string({
@@ -70,7 +70,8 @@ const MongoAggregation = z.object({
 
 async function generateQuery(
   apiKey,
-  { userInput, collectionName, databaseName, schema }
+  { userInput, collectionName, databaseName, schema },
+  { openaiModel, querySystemPrompt }
 ) {
   if (!userInput) {
     throw new Error('User input is required to generate a query.');
@@ -95,9 +96,9 @@ ${JSON.stringify(schema, null, 2)}
 ${userInput.trim()}
 `;
   const response = await openai.chat.completions.parse({
-    model: 'gpt-5-mini',
+    model: openaiModel,
     messages: [
-      { role: 'system', content: QUERY_SYSTEM_PROMPT.trim() },
+      { role: 'system', content: querySystemPrompt },
       {
         role: 'user',
         content: userPrompt.trim(),
@@ -107,7 +108,6 @@ ${userInput.trim()}
   });
 
   const message = response.choices[0].message;
-  console.log('Raw response message:', message);
 
   if (message.refusal) {
     throw new Error(message.refusal);
@@ -141,7 +141,8 @@ ${userInput.trim()}
 
 async function generateAggregation(
   apiKey,
-  { userInput, collectionName, databaseName, schema }
+  { userInput, collectionName, databaseName, schema },
+  { openaiModel, aggregationSystemPrompt }
 ) {
   if (!userInput) {
     throw new Error(
@@ -170,9 +171,9 @@ ${JSON.stringify(schema, null, 2)}
 ${userInput.trim()}
 `;
   const response = await openai.chat.completions.parse({
-    model: 'gpt-5-mini',
+    model: openaiModel,
     messages: [
-      { role: 'system', content: AGGREGATION_SYSTEM_PROMPT.trim() },
+      { role: 'system', content: aggregationSystemPrompt },
       {
         role: 'user',
         content: userPrompt.trim(),
@@ -182,7 +183,6 @@ ${userInput.trim()}
   });
 
   const message = response.choices[0].message;
-  console.log('Raw response message:', message);
 
   if (message.refusal) {
     throw new Error(message.refusal);
@@ -202,24 +202,38 @@ if (require.main === module) {
   process.loadEnvFile();
 
   Promise.allSettled([
-    generateQuery(process.env.OPENAI_API_KEY, {
-      schema: {
-        _id: { types: [{ bsonType: 'ObjectId' }] },
-        score: { types: [{ bsonType: 'Int32' }] },
+    generateQuery(
+      process.env.OPENAI_API_KEY,
+      {
+        schema: {
+          _id: { types: [{ bsonType: 'ObjectId' }] },
+          score: { types: [{ bsonType: 'Int32' }] },
+        },
+        userInput: 'Delete all documents where score is greater than 50.',
+        databaseName: 'testDB',
+        collectionName: 'testCollection',
       },
-      userInput: 'Delete all documents where score is greater than 50.',
-      databaseName: 'testDB',
-      collectionName: 'testCollection',
-    }),
-    generateAggregation(process.env.OPENAI_API_KEY, {
-      schema: {
-        _id: { types: [{ bsonType: 'ObjectId' }] },
-        score: { types: [{ bsonType: 'Int32' }] },
+      {
+        openaiModel: 'gpt-5-mini',
+        querySystemPrompt: QUERY_SYSTEM_PROMPT,
+      }
+    ),
+    generateAggregation(
+      process.env.OPENAI_API_KEY,
+      {
+        schema: {
+          _id: { types: [{ bsonType: 'ObjectId' }] },
+          score: { types: [{ bsonType: 'Int32' }] },
+        },
+        userInput: 'Find all documents where score is greater than 50.',
+        databaseName: 'testDB',
+        collectionName: 'testCollection',
       },
-      userInput: 'Find all documents where score is greater than 50.',
-      databaseName: 'testDB',
-      collectionName: 'testCollection',
-    }),
+      {
+        openaiModel: 'gpt-5-mini',
+        aggregationSystemPrompt: AGGREGATION_SYSTEM_PROMPT,
+      }
+    ),
   ]).then(([queryResult, pipelineResult]) => {
     if (queryResult.status === 'rejected') {
       console.error('Query Generation Error:', queryResult.reason);
@@ -235,4 +249,9 @@ if (require.main === module) {
   });
 }
 
-module.exports = { generateQuery, generateAggregation };
+module.exports = {
+  generateQuery,
+  generateAggregation,
+  QUERY_SYSTEM_PROMPT,
+  AGGREGATION_SYSTEM_PROMPT,
+};

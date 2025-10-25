@@ -421,7 +421,11 @@ function registerRoutes(instance) {
       }
 
       try {
-        const query = await generateQuery(args.openaiApiKey, request.body);
+        const query = await generateQuery(
+          args.openaiApiKey,
+          request.body,
+          args
+        );
         delete query.error;
         reply.send({
           content: {
@@ -449,7 +453,8 @@ function registerRoutes(instance) {
       try {
         const aggregation = await generateAggregation(
           args.openaiApiKey,
-          request.body
+          request.body,
+          args
         );
 
         delete aggregation.error;
