@@ -4,7 +4,7 @@ const {
   resolveSRVRecord,
   parseOptions,
 } = require('mongodb/lib/connection_string');
-const { MongoDBNamespace } = require('mongodb/lib/utils');
+const { generateQuery, generateAggregation } = require('./gen-ai');
 const DataService = require('./data-service');
 const {
   exportJSONFromQuery,
@@ -106,6 +106,19 @@ function registerRoutes(instance) {
         })
       );
       reply.send(connectionInfos);
+    }
+  );
+
+  // Settings
+  instance.get('/settings', (request, reply) => {
+    reply.send({});
+  });
+
+  instance.post(
+    '/settings/optInDataExplorerGenAIFeatures',
+    (request, reply) => {
+      console.log('val', request.body.value);
+      reply.send({ ok: true });
     }
   );
 
@@ -395,43 +408,60 @@ function registerRoutes(instance) {
     }
   );
 
-  // AI features
   instance.post(
-    '/settings/optInDataExplorerGenAIFeatures',
-    (request, reply) => {
-      reply.send({ ok: true });
+    '/ai/v1/groups/:projectId/mql-query',
+    async (request, reply) => {
+      const projectId = request.params.projectId;
+      if (projectId !== args.projectId) {
+        reply.status(400).send({ error: 'Project ID mismatch' });
+      }
+
+      if (!args.openaiApiKey) {
+        reply.status(400).send({ error: 'Missing OpenAI API key' });
+      }
+
+      try {
+        const query = await generateQuery(args.openaiApiKey, request.body);
+        delete query.error;
+        reply.send({
+          content: {
+            query,
+          },
+        });
+      } catch (err) {
+        reply.status(400).send({ error: err.message });
+      }
     }
   );
 
   instance.post(
-    '/ai/v1/groups/:projectId/mql-query',
+    '/ai/v1/groups/:projectId/mql-aggregation',
     async (request, reply) => {
-      const requestId = request.params.request_id;
-      if (request.params.projectId !== args.projectId) {
+      const projectId = request.params.projectId;
+      if (projectId !== args.projectId) {
         reply.status(400).send({ error: 'Project ID mismatch' });
       }
 
-      /*
-      Example request body:
-       {
-        userInput: 'all listings that have at least 2 bedrooms',
-        collectionName: 'listingsAndReviews',
-        databaseName: 'sample_airbnb',
-        schema: { ... }
+      if (!args.openaiApiKey) {
+        reply.status(400).send({ error: 'Missing OpenAI API key' });
       }
-      */
 
-      reply.send({
-        content: {
-          query: {
-            filter: '{}',
-            limit: null,
-            project: null,
-            skip: null,
-            sort: null,
+      try {
+        const aggregation = await generateAggregation(
+          args.openaiApiKey,
+          request.body
+        );
+
+        delete aggregation.error;
+
+        reply.send({
+          content: {
+            aggregation,
           },
-        },
-      });
+        });
+      } catch (err) {
+        reply.status(400).send({ error: err.message });
+      }
     }
   );
 
@@ -468,37 +498,6 @@ async function createClientSafeConnectionString(cs) {
       err
     );
     return cs.href; // Fallback to original if SRV resolution fails
-  }
-}
-
-/**
- *
- * @param {import('mongodb').MongoClient} mongoClient
- * @param {object} exportOptions
- */
-function buildCursor(mongoClient, exportOptions) {
-  const ns = MongoDBNamespace.fromString(exportOptions.ns);
-
-  if (exportOptions.query) {
-    const { filter, ...options } = exportOptions.query;
-
-    options.promoteValues = false;
-    options.bsonRegExp = true;
-
-    return mongoClient
-      .db(ns.db)
-      .collection(ns.collection)
-      .find(filter, options);
-  } else {
-    const { stages, options = {} } = exportOptions.aggregation;
-
-    options.promoteValues = false;
-    options.bsonRegExp = true;
-
-    return mongoClient
-      .db(ns.db)
-      .collection(ns.collection)
-      .aggregate(stages, options);
   }
 }
 
