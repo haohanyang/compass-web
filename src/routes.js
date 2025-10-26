@@ -4,7 +4,7 @@ const {
   resolveSRVRecord,
   parseOptions,
 } = require('mongodb/lib/connection_string');
-const { MongoDBNamespace } = require('mongodb/lib/utils');
+const { generateQuery, generateAggregation } = require('./gen-ai');
 const DataService = require('./data-service');
 const {
   exportJSONFromQuery,
@@ -43,6 +43,11 @@ function registerRoutes(instance) {
   /** @type {Record<string, import('mongodb').MongoClient>} */
   const mongoClients = instance.mongoClients;
 
+  const settings = {
+    enableGenAIFeatures: args.enableGenAiFeatures,
+    enableGenAISampleDocumentPassing: args.enableGenAiSampleDocuments,
+  };
+
   if (args.basicAuth) {
     instance.addHook('onRequest', instance.basicAuth);
   }
@@ -60,10 +65,26 @@ function registerRoutes(instance) {
 
   instance.get('/cloud-mongodb-com/v2/:projectId/params', (request, reply) => {
     if (request.params.projectId == args.projectId) {
+      const preferences = settings;
+
       reply.send({
         orgId: args.orgId,
         projectId: args.projectId,
         appName: args.appName,
+        preferences: {
+          ...preferences,
+          enableGenAIFeaturesAtlasOrg: preferences.enableGenAIFeatures,
+          enableGenAIFeaturesAtlasProject: preferences.enableGenAIFeatures,
+          enableGenAISampleDocumentPassing:
+            preferences.enableGenAISampleDocumentPassing,
+          enableGenAISampleDocumentPassingOnAtlasProject:
+            preferences.enableGenAISampleDocumentPassing,
+          optInDataExplorerGenAIFeatures:
+            preferences.optInDataExplorerGenAIFeatures ?? false,
+          cloudFeatureRolloutAccess: {
+            GEN_AI_COMPASS: preferences.enableGenAIFeatures,
+          },
+        },
       });
     } else {
       reply.status(404).send({
@@ -106,6 +127,20 @@ function registerRoutes(instance) {
         })
       );
       reply.send(connectionInfos);
+    }
+  );
+
+  // Settings
+  instance.get('/settings', (request, reply) => {
+    reply.send(settings);
+  });
+
+  instance.post(
+    '/settings/optInDataExplorerGenAIFeatures',
+    (request, reply) => {
+      settings.optInDataExplorerGenAIFeatures = request.body.value;
+
+      reply.send({ ok: true });
     }
   );
 
@@ -395,6 +430,76 @@ function registerRoutes(instance) {
     }
   );
 
+  instance.post(
+    '/ai/v1/groups/:projectId/mql-query',
+    async (request, reply) => {
+      const projectId = request.params.projectId;
+      if (projectId !== args.projectId) {
+        reply.status(400).send({ error: 'Project ID mismatch' });
+      }
+
+      if (!args.enableGenAiFeatures) {
+        reply.status(400).send({ error: 'Gen AI is not enabled' });
+      }
+
+      if (!args.openaiApiKey) {
+        reply.status(400).send({ error: 'Missing OpenAI API key' });
+      }
+
+      try {
+        const query = await generateQuery(
+          args.openaiApiKey,
+          request.body,
+          args
+        );
+        delete query.error;
+        reply.send({
+          content: {
+            query,
+          },
+        });
+      } catch (err) {
+        reply.status(400).send({ error: err.message });
+      }
+    }
+  );
+
+  instance.post(
+    '/ai/v1/groups/:projectId/mql-aggregation',
+    async (request, reply) => {
+      const projectId = request.params.projectId;
+      if (projectId !== args.projectId) {
+        reply.status(400).send({ error: 'Project ID mismatch' });
+      }
+
+      if (!args.enableGenAiFeatures) {
+        reply.status(400).send({ error: 'Gen AI is not enabled' });
+      }
+
+      if (!args.openaiApiKey) {
+        reply.status(400).send({ error: 'Missing OpenAI API key' });
+      }
+
+      try {
+        const aggregation = await generateAggregation(
+          args.openaiApiKey,
+          request.body,
+          args
+        );
+
+        delete aggregation.error;
+
+        reply.send({
+          content: {
+            aggregation,
+          },
+        });
+      } catch (err) {
+        reply.status(400).send({ error: err.message });
+      }
+    }
+  );
+
   instance.setNotFoundHandler((request, reply) => {
     const csrfToken = reply.generateCsrf();
     reply.view('index.eta', { csrfToken, appName: args.appName });
@@ -428,37 +533,6 @@ async function createClientSafeConnectionString(cs) {
       err
     );
     return cs.href; // Fallback to original if SRV resolution fails
-  }
-}
-
-/**
- *
- * @param {import('mongodb').MongoClient} mongoClient
- * @param {object} exportOptions
- */
-function buildCursor(mongoClient, exportOptions) {
-  const ns = MongoDBNamespace.fromString(exportOptions.ns);
-
-  if (exportOptions.query) {
-    const { filter, ...options } = exportOptions.query;
-
-    options.promoteValues = false;
-    options.bsonRegExp = true;
-
-    return mongoClient
-      .db(ns.db)
-      .collection(ns.collection)
-      .find(filter, options);
-  } else {
-    const { stages, options = {} } = exportOptions.aggregation;
-
-    options.promoteValues = false;
-    options.bsonRegExp = true;
-
-    return mongoClient
-      .db(ns.db)
-      .collection(ns.collection)
-      .aggregate(stages, options);
   }
 }
 

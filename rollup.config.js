@@ -22,6 +22,8 @@ const options = {
     'stream-json/Parser',
     'stream-json/streamers/StreamValues',
     'stream-json/streamers/StreamArray',
+    'openai',
+    'openai/helpers/zod',
   ],
   plugins: [
     json(),

@@ -5,6 +5,7 @@ const yargs = require('yargs');
 const { hideBin } = require('yargs/helpers');
 const { ConnectionString } = require('mongodb-connection-string-url');
 const pkgJson = require('../package.json');
+const { AGGREGATION_SYSTEM_PROMPT, QUERY_SYSTEM_PROMPT } = require('./gen-ai');
 
 function readCliArgs() {
   const args = yargs(hideBin(process.argv))
@@ -53,6 +54,37 @@ function readCliArgs() {
       type: 'string',
       description: 'Name of the application',
       default: 'Compass Web',
+    })
+    .option('openai-api-key', {
+      type: 'string',
+      description: 'OpenAI API key for GenAI services',
+    })
+    .option('query-system-prompt', {
+      type: 'string',
+      description:
+        'System prompt for query generation. If not set, a default prompt will be used.',
+      default: QUERY_SYSTEM_PROMPT,
+    })
+    .option('aggregation-system-prompt', {
+      type: 'string',
+      description:
+        'System prompt for aggregation generation. If not set, a default prompt will be used.',
+      default: AGGREGATION_SYSTEM_PROMPT,
+    })
+    .option('openai-model', {
+      type: 'string',
+      description: 'OpenAI model used in GenAI service.',
+      default: 'gpt-5-mini',
+    })
+    .option('enable-gen-ai-features', {
+      type: 'boolean',
+      description: 'Enable GenAI features',
+      default: false,
+    })
+    .option('enable-gen-ai-sample-documents', {
+      type: 'boolean',
+      description: 'Enable upload sample documents to GenAI service.',
+      default: false,
     })
     .parse();
 
