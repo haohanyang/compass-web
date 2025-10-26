@@ -44,7 +44,7 @@ function registerRoutes(instance) {
   const mongoClients = instance.mongoClients;
 
   const settings = {
-    enableGenAIFeatures: args.enableGenaiFeatures,
+    enableGenAIFeatures: args.enableGenAiFeatures,
     enableGenAISampleDocumentPassing: args.enableGenAiSampleDocuments,
   };
 
@@ -438,6 +438,10 @@ function registerRoutes(instance) {
         reply.status(400).send({ error: 'Project ID mismatch' });
       }
 
+      if (!args.enableGenAiFeatures) {
+        reply.status(400).send({ error: 'Gen AI is not enabled' });
+      }
+
       if (!args.openaiApiKey) {
         reply.status(400).send({ error: 'Missing OpenAI API key' });
       }
@@ -466,6 +470,10 @@ function registerRoutes(instance) {
       const projectId = request.params.projectId;
       if (projectId !== args.projectId) {
         reply.status(400).send({ error: 'Project ID mismatch' });
+      }
+
+      if (!args.enableGenAiFeatures) {
+        reply.status(400).send({ error: 'Gen AI is not enabled' });
       }
 
       if (!args.openaiApiKey) {

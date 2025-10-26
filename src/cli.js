@@ -76,7 +76,7 @@ function readCliArgs() {
       description: 'OpenAI model used in GenAI service.',
       default: 'gpt-5-mini',
     })
-    .option('enable-genai-features', {
+    .option('enable-gen-ai-features', {
       type: 'boolean',
       description: 'Enable GenAI features',
       default: false,
