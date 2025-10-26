@@ -70,8 +70,8 @@ const MongoAggregation = z.object({
 
 async function generateQuery(
   apiKey,
-  { userInput, collectionName, databaseName, schema },
-  { openaiModel, querySystemPrompt }
+  { userInput, collectionName, databaseName, schema, sampleDocuments },
+  { openaiModel, querySystemPrompt, enableGenAiSampleDocuments }
 ) {
   if (!userInput) {
     throw new Error('User input is required to generate a query.');
@@ -87,12 +87,20 @@ async function generateQuery(
 
   const openai = new OpenAI({ apiKey });
 
+  let samples = '';
+
+  if (enableGenAiSampleDocuments && Array.isArray(sampleDocuments)) {
+    samples = `- Sample documents:
+${sampleDocuments.map((doc) => JSON.stringify(doc, null, 2)).join('\n')}
+`;
+  }
+
   const userPrompt = `
 - Collection name:
 ${collectionName}
 - Schema:
 ${JSON.stringify(schema, null, 2)}
-- Request:
+${samples}- Request:
 ${userInput.trim()}
 `;
   const response = await openai.chat.completions.parse({
@@ -141,8 +149,8 @@ ${userInput.trim()}
 
 async function generateAggregation(
   apiKey,
-  { userInput, collectionName, databaseName, schema },
-  { openaiModel, aggregationSystemPrompt }
+  { userInput, collectionName, databaseName, schema, sampleDocuments },
+  { openaiModel, aggregationSystemPrompt, enableGenAiSampleDocuments }
 ) {
   if (!userInput) {
     throw new Error(
@@ -162,14 +170,23 @@ async function generateAggregation(
 
   const openai = new OpenAI({ apiKey });
 
+  let samples = '';
+
+  if (enableGenAiSampleDocuments && Array.isArray(sampleDocuments)) {
+    samples = `- Sample documents:
+${sampleDocuments.map((doc) => JSON.stringify(doc, null, 2)).join('\n')}
+`;
+  }
+
   const userPrompt = `
 - Collection name:
 ${collectionName}
 - Schema:
 ${JSON.stringify(schema, null, 2)}
-- Request:
+${samples}- Request:
 ${userInput.trim()}
 `;
+
   const response = await openai.chat.completions.parse({
     model: openaiModel,
     messages: [

@@ -76,6 +76,16 @@ function readCliArgs() {
       description: 'OpenAI model used in GenAI service.',
       default: 'gpt-5-mini',
     })
+    .option('enable-genai-features', {
+      type: 'boolean',
+      description: 'Enable GenAI features',
+      default: false,
+    })
+    .option('enable-gen-ai-sample-documents', {
+      type: 'boolean',
+      description: 'Enable upload sample documents to GenAI service.',
+      default: false,
+    })
     .parse();
 
   let mongoURIStrings = args.mongoUri.trim().split(/\s+/);

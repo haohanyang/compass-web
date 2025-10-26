@@ -43,6 +43,11 @@ function registerRoutes(instance) {
   /** @type {Record<string, import('mongodb').MongoClient>} */
   const mongoClients = instance.mongoClients;
 
+  const settings = {
+    enableGenAIFeatures: args.enableGenaiFeatures,
+    enableGenAISampleDocumentPassing: args.enableGenAiSampleDocuments,
+  };
+
   if (args.basicAuth) {
     instance.addHook('onRequest', instance.basicAuth);
   }
@@ -60,10 +65,26 @@ function registerRoutes(instance) {
 
   instance.get('/cloud-mongodb-com/v2/:projectId/params', (request, reply) => {
     if (request.params.projectId == args.projectId) {
+      const preferences = settings;
+
       reply.send({
         orgId: args.orgId,
         projectId: args.projectId,
         appName: args.appName,
+        preferences: {
+          ...preferences,
+          enableGenAIFeaturesAtlasOrg: preferences.enableGenAIFeatures,
+          enableGenAIFeaturesAtlasProject: preferences.enableGenAIFeatures,
+          enableGenAISampleDocumentPassing:
+            preferences.enableGenAISampleDocumentPassing,
+          enableGenAISampleDocumentPassingOnAtlasProject:
+            preferences.enableGenAISampleDocumentPassing,
+          optInDataExplorerGenAIFeatures:
+            preferences.optInDataExplorerGenAIFeatures ?? false,
+          cloudFeatureRolloutAccess: {
+            GEN_AI_COMPASS: preferences.enableGenAIFeatures,
+          },
+        },
       });
     } else {
       reply.status(404).send({
@@ -111,13 +132,14 @@ function registerRoutes(instance) {
 
   // Settings
   instance.get('/settings', (request, reply) => {
-    reply.send({});
+    reply.send(settings);
   });
 
   instance.post(
     '/settings/optInDataExplorerGenAIFeatures',
     (request, reply) => {
-      console.log('val', request.body.value);
+      settings.optInDataExplorerGenAIFeatures = request.body.value;
+
       reply.send({ ok: true });
     }
   );

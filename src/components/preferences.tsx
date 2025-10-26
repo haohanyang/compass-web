@@ -30,7 +30,7 @@ function persistEditablePreferences(preferences: UserPreferences) {
   );
 }
 
-function loadPreferences(preferences: UserPreferences) {
+function loadUserPreferencesFromStorage(preferences: UserPreferences) {
   const theme = localStorage.getItem('compass-web:theme') ?? '';
   if (['DARK', 'LIGHT', 'OS_THEME'].includes(theme)) {
     // @ts-ignore
@@ -56,8 +56,6 @@ class CompassWebPreferencesAccess implements PreferencesAccess {
         preferencesOverrides
       ),
     });
-
-    this._preferences.setupStorage();
   }
 
   savePreferences(
@@ -128,7 +126,7 @@ class CompassWebPreferencesStorage implements PreferencesStorage {
   }
 
   setup(): Promise<void> {
-    loadPreferences(this.preferences);
+    loadUserPreferencesFromStorage(this.preferences);
     return Promise.resolve();
   }
 
@@ -150,31 +148,9 @@ class CompassWebPreferencesStorage implements PreferencesStorage {
 export function useCompassWebPreferences(
   initialPreferences?: Partial<AllPreferences>
 ): React.MutableRefObject<CompassWebPreferencesAccess> {
+  console.log('Initial Preferences:', initialPreferences);
   const preferencesAccess = useRef(
-    new CompassWebPreferencesAccess({
-      ...initialPreferences,
-      enableExplainPlan: true,
-      enableAggregationBuilderRunPipeline: true,
-      enableAggregationBuilderExtraOptions: true,
-      enableAtlasSearchIndexes: false,
-      enableImportExport: false,
-      enableGenAIFeatures: true,
-      enableGenAIFeaturesAtlasProject: true,
-      enableGenAISampleDocumentPassingOnAtlasProject: true,
-      enableGenAIFeaturesAtlasOrg: true,
-      enablePerformanceAdvisorBanner: false,
-      cloudFeatureRolloutAccess: {
-        GEN_AI_COMPASS: true,
-      },
-      maximumNumberOfActiveConnections: 10,
-      trackUsageStatistics: true,
-      enableShell: false,
-      enableCreatingNewConnections: false,
-      enableGlobalWrites: false,
-      optInDataExplorerGenAIFeatures: false,
-      enableConnectInNewWindow: false,
-      enableGenAISampleDocumentPassing: true,
-    })
+    new CompassWebPreferencesAccess(initialPreferences)
   );
 
   return preferencesAccess;

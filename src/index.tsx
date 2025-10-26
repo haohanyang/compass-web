@@ -16,6 +16,7 @@ interface ProjectParams {
   projectId: string;
   orgId: string;
   appName: string;
+  preferences: Partial<AllPreferences>;
 }
 
 const sandboxContainerStyles = css({
@@ -27,19 +28,19 @@ const initialPreferences: Partial<AllPreferences> = {
   enableExportSchema: true,
   enablePerformanceAdvisorBanner: false,
   enableAtlasSearchIndexes: false,
-  enableGenAIFeatures: false,
   maximumNumberOfActiveConnections: undefined,
   enableCreatingNewConnections: false,
   enableGlobalWrites: false,
   enableRollingIndexes: false,
   showDisabledConnections: true,
-  enableGenAIFeaturesAtlasProject: false,
-  enableGenAISampleDocumentPassingOnAtlasProject: false,
-  enableGenAIFeaturesAtlasOrg: false,
-  optInDataExplorerGenAIFeatures: false,
   enableDataModeling: false,
   trackUsageStatistics: false,
   enableImportExport: true,
+  enableExplainPlan: true,
+  enableAggregationBuilderRunPipeline: true,
+  enableAggregationBuilderExtraOptions: true,
+  enableShell: false,
+  enableConnectInNewWindow: false,
 };
 
 resetGlobalCSS();
@@ -57,7 +58,7 @@ const App = () => {
         if (!projectId) {
           throw new Error('failed to get projectId');
         }
-        const { orgId, appName } = await fetch(
+        const { orgId, appName, preferences } = await fetch(
           `/cloud-mongodb-com/v2/${projectId}/params`
         ).then((res) => {
           return res.json();
@@ -66,6 +67,7 @@ const App = () => {
           projectId,
           orgId,
           appName,
+          preferences,
         });
       })
       .catch((err) => {
@@ -86,7 +88,10 @@ const App = () => {
           appName={projectParams.appName}
           onActiveWorkspaceTabChange={updateCurrentTab}
           initialWorkspace={currentTab ?? undefined}
-          initialPreferences={initialPreferences}
+          initialPreferences={{
+            ...initialPreferences,
+            ...projectParams.preferences,
+          }}
           onLog={compassWebLogger.log}
           onDebug={compassWebLogger.debug}
           onFailToLoadConnections={(error) => {
