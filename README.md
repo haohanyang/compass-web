@@ -23,7 +23,7 @@ Not all Compass Desktop features are available on Compass Web. Here is non-exhau
 - ~~Import from JSON/CSV~~ (Supported since 0.2.3)
 - Mongo Shell
 - Proxy
-- Gen AI
+- ~~Gen AI~~ (Supported since 0.3.0)
 
 ## 📦 Installation
 
@@ -66,17 +66,23 @@ Check an example [docker-compose.yaml](./docker-compose.yaml) file if you want t
 
 You can configure `compass-web` using command-line arguments or environment variables (prefixed with `CW_`).
 
-| Parameter               | Type   | Env Variable             | Description                                                                         | Default              |
-| ----------------------- | ------ | ------------------------ | ----------------------------------------------------------------------------------- | -------------------- |
-| `--mongo-uri`           | string | `CW_MONGO_URI`           | **Required.** MongoDB connection string(s). Separate multiple URIs with whitespace. | _Required_           |
-| `--port`                | number | `CW_PORT`                | Port to run the server on.                                                          | `8080`               |
-| `--host`                | string | `CW_HOST`                | Host to run the server on.                                                          | `localhost`          |
-| `--app-name`            | string | `CW_APP_NAME`            | Name of the application on.                                                         | `Compass Web`        |
-| `--org-id`              | string | `CW_ORG_ID`              | Organization ID associated with the connection.                                     | `default-org-id`     |
-| `--project-id`          | string | `CW_PROJECT_ID`          | Project ID associated with the connection.                                          | `default-project-id` |
-| `--cluster-id`          | string | `CW_CLUSTER_ID`          | Cluster ID associated with the connection.                                          | `default-cluster-id` |
-| `--basic-auth-username` | string | `CW_BASIC_AUTH_USERNAME` | Username for Basic HTTP authentication scheme.                                      | `null`               |
-| `--basic-auth-password` | string | `CW_BASIC_AUTH_PASSWORD` | Password for Basic HTTP authentication scheme.                                      | `null`               |
+| Parameter                          | Type   | Env Variable                        | Description                                                                         | Default                               |
+| ---------------------------------- | ------ | ----------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------- |
+| `--mongo-uri`                      | string | `CW_MONGO_URI`                      | **Required.** MongoDB connection string(s). Separate multiple URIs with whitespace. | _Required_                            |
+| `--port`                           | number | `CW_PORT`                           | Port to run the server on.                                                          | `8080`                                |
+| `--host`                           | string | `CW_HOST`                           | Host to run the server on.                                                          | `localhost`                           |
+| `--app-name`                       | string | `CW_APP_NAME`                       | Name of the application on.                                                         | `Compass Web`                         |
+| `--org-id`                         | string | `CW_ORG_ID`                         | Organization ID associated with the connection.                                     | `default-org-id`                      |
+| `--project-id`                     | string | `CW_PROJECT_ID`                     | Project ID associated with the connection.                                          | `default-project-id`                  |
+| `--cluster-id`                     | string | `CW_CLUSTER_ID`                     | Cluster ID associated with the connection.                                          | `default-cluster-id`                  |
+| `--basic-auth-username`            | string | `CW_BASIC_AUTH_USERNAME`            | Username for Basic HTTP authentication scheme.                                      | `null`                                |
+| `--basic-auth-password`            | string | `CW_BASIC_AUTH_PASSWORD`            | Password for Basic HTTP authentication scheme.                                      | `null`                                |
+| `--openai-api-key`                 | string | `CW_OPENAI_API_KEY`                 | OpenAI API key for GenAI services                                                   | `null`                                |
+| `--query-system-prompt`            | string | `CW_QUERY_SYSTEM_PROMPT`            | System prompt for query generation                                                  | Defined in [gen-ai.js](src/gen-ai.js) |
+| `--aggregation-system-prompt`      | string | `CW_AGGREGATION_SYSTEM_PROMPT`      | System prompt for aggregation generation                                            | Defined in [gen-ai.js](src/gen-ai.js) |
+| `--openai-model`                   | string | `CW_OPENAI_MODEL`                   | OpenAI model used in GenAI service                                                  | `gpt-5-mini`                          |
+| `--enable-gen-ai-features`         | bool   | `CW_ENABLE_GEN_AI_FEATURES`         | Enable GenAI features                                                               | `false`                               |
+| `--enable-gen-ai-sample-documents` | bool   | `CW_ENABLE_GEN_AI_SAMPLE_DOCUMENTS` | Enable upload sample documents to GenAI Service                                     | `false`                               |
 
 ## Settings
 
