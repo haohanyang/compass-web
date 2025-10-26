@@ -1,3 +1,9 @@
+## 0.3.0 - 2025-10-26
+
+### Added
+
+- GenAI features powered by OpenAI to generate query and aggregation pipeline.
+
 ## 0.2.8 - 2025-10-24
 
 ### Changed

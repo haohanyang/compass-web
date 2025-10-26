@@ -15,15 +15,17 @@ A port of the MongoDB Compass to Web. The frontend is rebuilt and re-packaged fr
 
 ## ![screenshot dark theme](/images/screenshot5.png)
 
+## ![screenshot gen ai](/images/screenshot-genai.png)
+
 ## Unsupported Features
 
 Not all Compass Desktop features are available on Compass Web. Here is non-exhaustive list unsupported features.
 
 - ~~Export to JSON/CSV~~ (Supported since 0.2.2)
 - ~~Import from JSON/CSV~~ (Supported since 0.2.3)
+- ~~Gen AI~~ (Supported since 0.3.0)
 - Mongo Shell
 - Proxy
-- ~~Gen AI~~ (Supported since 0.3.0)
 
 ## 📦 Installation
 
