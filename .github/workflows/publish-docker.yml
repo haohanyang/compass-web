@@ -19,11 +19,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        if: ${{ github.event.inputs.version == '' }}
+        if: ${{ github.event.inputs.version != '' }}
         with:
           ref: "v${{ github.event.inputs.version }}"
       - uses: actions/checkout@v4
-        if: ${{ github.event.inputs.version != '' }}
+        if: ${{ github.event.inputs.version == '' }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
