@@ -51,7 +51,6 @@
     "@rollup/plugin-commonjs": "^28.0.8",
     "@rollup/plugin-json": "^6.1.0",
     "copy-webpack-plugin": "^13.0.0",
-    "dotenv": "^16.5.0",
     "rollup": "^4.52.5"
   },
   "pnpm": {},
