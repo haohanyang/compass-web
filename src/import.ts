@@ -70,7 +70,7 @@ const loadCSVPreviewDocs = (file: File): ImportThunkAction<Promise<void>> => {
         headers: {
           // @ts-ignore
           'csrf-token':
-            document.querySelector('meta[name="csrf-token" i]')?.content ?? '',
+            document.querySelector('meta[name="csrf-token"]')?.content ?? '',
         },
       });
 
@@ -188,7 +188,7 @@ const loadTypes = (
         headers: {
           // @ts-ignore
           'csrf-token':
-            document.querySelector('meta[name="csrf-token" i]')?.content ?? '',
+            document.querySelector('meta[name="csrf-token"]')?.content ?? '',
         },
       });
 
@@ -248,7 +248,7 @@ export const selectImportFile = (
         headers: {
           // @ts-ignore
           'csrf-token':
-            document.querySelector('meta[name="csrf-token" i]')?.content ?? '',
+            document.querySelector('meta[name="csrf-token"]')?.content ?? '',
         },
       });
 
@@ -408,8 +408,7 @@ export const startImport = (file: File): ImportThunkAction<Promise<void>> => {
           headers: {
             // @ts-ignore
             'csrf-token':
-              document.querySelector('meta[name="csrf-token" i]')?.content ??
-              '',
+              document.querySelector('meta[name="csrf-token"]')?.content ?? '',
           },
         });
 
@@ -430,8 +429,7 @@ export const startImport = (file: File): ImportThunkAction<Promise<void>> => {
           headers: {
             // @ts-ignore
             'csrf-token':
-              document.querySelector('meta[name="csrf-token" i]')?.content ??
-              '',
+              document.querySelector('meta[name="csrf-token"]')?.content ?? '',
           },
         });
 

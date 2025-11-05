@@ -153,7 +153,7 @@ export const runExport = ({
               'Content-Type': 'application/json',
               // @ts-ignore
               'csrf-token':
-                document.querySelector('meta[name="csrf-token" i]')?.content ??
+                document.querySelector('meta[name="csrf-token"]')?.content ??
                 '',
             },
           });
@@ -169,7 +169,7 @@ export const runExport = ({
               'Content-Type': 'application/json',
               // @ts-ignore
               'csrf-token':
-                document.querySelector('meta[name="csrf-token" i]')?.content ??
+                document.querySelector('meta[name="csrf-token"]')?.content ??
                 '',
             },
           });
@@ -183,7 +183,7 @@ export const runExport = ({
               'Content-Type': 'application/json',
               // @ts-ignore
               'csrf-token':
-                document.querySelector('meta[name="csrf-token" i]')?.content ??
+                document.querySelector('meta[name="csrf-token"]')?.content ??
                 '',
             },
           });
@@ -199,7 +199,7 @@ export const runExport = ({
               'Content-Type': 'application/json',
               // @ts-ignore
               'csrf-token':
-                document.querySelector('meta[name="csrf-token" i]')?.content ??
+                document.querySelector('meta[name="csrf-token"]')?.content ??
                 '',
             },
           });
@@ -335,7 +335,7 @@ export const selectFieldsToExport = (): ExportThunkAction<
           'Content-Type': 'application/json',
           // @ts-ignore
           'csrf-token':
-            document.querySelector('meta[name="csrf-token" i]')?.content ?? '',
+            document.querySelector('meta[name="csrf-token"]')?.content ?? '',
         },
       });
 
