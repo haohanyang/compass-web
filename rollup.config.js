@@ -24,6 +24,8 @@ const options = {
     'stream-json/streamers/StreamArray',
     'openai',
     'openai/helpers/zod',
+    '@mongosh/node-runtime-worker-thread',
+    'web-worker',
   ],
   plugins: [
     json(),
