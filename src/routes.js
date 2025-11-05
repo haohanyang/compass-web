@@ -432,6 +432,7 @@ function registerRoutes(instance) {
 
   instance.post(
     '/ai/v1/groups/:projectId/mql-query',
+    { preHandler: instance.csrfProtection },
     async (request, reply) => {
       const projectId = request.params.projectId;
       if (projectId !== args.projectId) {
@@ -466,6 +467,7 @@ function registerRoutes(instance) {
 
   instance.post(
     '/ai/v1/groups/:projectId/mql-aggregation',
+    { preHandler: instance.csrfProtection },
     async (request, reply) => {
       const projectId = request.params.projectId;
       if (projectId !== args.projectId) {
