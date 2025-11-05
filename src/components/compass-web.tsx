@@ -70,10 +70,22 @@ import { WorkspaceTab as DataModelingWorkspace } from '../../compass/packages/co
 import { DataModelStorageServiceProviderInMemory } from '../../compass/packages/compass-data-modeling/src/services/data-model-storage-in-memory';
 
 const WithAtlasProviders: React.FC = ({ children }) => {
+  let defaultHeaders = undefined;
+
+  const csrfElement: HTMLMetaElement | null = document.querySelector(
+    'meta[name="csrf-token"]'
+  );
+
+  if (csrfElement?.content) {
+    defaultHeaders = {
+      'csrf-token': csrfElement.content,
+    };
+  }
+
   return (
     <AtlasCloudAuthServiceProvider>
       <AtlasClusterConnectionsOnlyProvider value={true}>
-        <AtlasServiceProvider>
+        <AtlasServiceProvider options={{ defaultHeaders }}>
           <AtlasAiServiceProvider apiURLPreset="cloud">
             {children}
           </AtlasAiServiceProvider>
