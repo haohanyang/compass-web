@@ -1,7 +1,8 @@
 import type {
   ConnectionStorage,
   ConnectionInfo,
-} from '../../compass/packages/connection-storage/src/provider';
+} from '../compass/packages/connection-storage/src/provider';
+import { openToast } from '../compass/packages/compass-components/src';
 
 export class CompassWebConnectionStorage implements ConnectionStorage {
   private readonly _defaultHeaders: Record<string, string> = {
@@ -19,44 +20,80 @@ export class CompassWebConnectionStorage implements ConnectionStorage {
   }
 
   async loadAll(): Promise<ConnectionInfo[]> {
-    const resp = await fetch(
-      `/explorer/v1/groups/${this._projectId}/clusters/connectionInfo`
-    );
-    const connectionInfos = (await resp.json()) as ConnectionInfo[];
-    return connectionInfos;
+    try {
+      const resp = await fetch(
+        `/explorer/v1/groups/${this._projectId}/clusters/connectionInfo`
+      );
+
+      if (!resp.ok) {
+        const error = (await resp.json()).error || 'Unknown error';
+        throw new Error(error);
+      }
+
+      const connectionInfos = (await resp.json()) as ConnectionInfo[];
+      return connectionInfos;
+    } catch (err) {
+      openToast('failed-load-connection-info', {
+        title: 'Failed to load project parameters',
+        description: (err as Error).message,
+        variant: 'warning',
+      });
+      return [];
+    }
   }
 
   async load({ id }: { id: string }): Promise<ConnectionInfo | undefined> {
     const allConnections = await this.loadAll();
     return allConnections.find((conn) => conn.id === id);
   }
+
   async save({
     connectionInfo,
   }: {
     connectionInfo: ConnectionInfo;
   }): Promise<void> {
-    const resp = await fetch(
-      `/explorer/v1/groups/${this._projectId}/clusters/connectionInfo`,
-      {
-        method: 'POST',
-        headers: this._defaultHeaders,
-        body: JSON.stringify(connectionInfo),
-      }
-    );
+    try {
+      const resp = await fetch(
+        `/explorer/v1/groups/${this._projectId}/clusters/connectionInfo`,
+        {
+          method: 'POST',
+          headers: this._defaultHeaders,
+          body: JSON.stringify(connectionInfo),
+        }
+      );
 
-    const result = await resp.json();
-    console.log('Saved connection result:', result);
+      if (!resp.ok) {
+        const error = (await resp.json()).error || 'Unknown error';
+        throw new Error(error);
+      }
+    } catch (err) {
+      openToast('failed-save-connection-info', {
+        title: 'Failed to save the connection',
+        description: (err as Error).message,
+        variant: 'warning',
+      });
+    }
   }
-  async delete({ id }: { id: string }): Promise<void> {
-    const resp = await fetch(
-      `/explorer/v1/groups/${this._projectId}/clusters/connectionInfo/${id}`,
-      {
-        method: 'DELETE',
-        headers: this._defaultHeaders,
-      }
-    );
 
-    const result = await resp.json();
-    console.log('Deleted connection result:', result);
+  async delete({ id }: { id: string }): Promise<void> {
+    try {
+      const resp = await fetch(
+        `/explorer/v1/groups/${this._projectId}/clusters/connectionInfo/${id}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      if (!resp.ok) {
+        const error = (await resp.json()).error || 'Unknown error';
+        throw new Error(error);
+      }
+    } catch (err) {
+      openToast('failed-delete-connection-info', {
+        title: 'Failed to delete the connection',
+        description: (err as Error).message,
+        variant: 'warning',
+      });
+    }
   }
 }

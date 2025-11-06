@@ -105,22 +105,39 @@ function registerRoutes(instance) {
     }
   );
 
+  // Save connection
   instance.post(
     '/explorer/v1/groups/:projectId/clusters/connectionInfo',
     async (request, reply) => {
       const connectionInfo = request.body;
-      console.log('New connection info saved', connectionInfo);
+      if (!connectionInfo) {
+        reply.status(400).send({ error: 'connectionInfo is required' });
+      }
 
-      reply.send({ ok: true });
+      try {
+        connectionManager.saveConnectionInfo(connectionInfo);
+        reply.send({ ok: true });
+      } catch (err) {
+        reply.status(400).send({ error: err.message });
+      }
     }
   );
 
+  // Delete connection
   instance.delete(
     '/explorer/v1/groups/:projectId/clusters/connectionInfo/:connectionId',
     async (request, reply) => {
       const connectionId = request.params.connectionId;
-      console.log('Connection info deleted', connectionId);
-      reply.send({ ok: true });
+
+      if (!connectionId) {
+        reply.status(400).send({ error: 'connectionId is required' });
+      }
+      try {
+        connectionManager.deleteConnectionInfo(connectionId);
+        reply.send({ ok: true });
+      } catch (err) {
+        reply.status(400).send({ error: err.message });
+      }
     }
   );
 

@@ -1,5 +1,9 @@
 'use strict';
 
+/**
+ * @typedef {import('../compass/packages/connection-info/src').ConnectionInfo} ConnectionInfo
+ */
+
 const { randomBytes } = require('crypto');
 const { MongoClient } = require('mongodb');
 const {
@@ -15,7 +19,7 @@ export class ConnectionManager {
   #editable;
 
   /**
-   * @type {Map<string, {mongoClient: MongoClient, connectionInfo: import('../compass/packages/connection-info/src').ConnectionInfo}>}
+   * @type {Map<string, {mongoClient: MongoClient, connectionInfo: ConnectionInfo}>}
    */
   #connections;
 
@@ -59,9 +63,10 @@ export class ConnectionManager {
 
   /**
    * @param {boolean} resolveSrv
-   * @returns {Promise<Array<import('../compass/packages/connection-info/src').ConnectionInfo>>}
+   * @returns {Promise<Array<ConnectionInfo>>}
    */
   async getAllConnections(resolveSrv = true) {
+    /** @type {ConnectionInfo} */
     const connections = [];
 
     for (const { connectionInfo } of this.#connections.values()) {
@@ -90,7 +95,37 @@ export class ConnectionManager {
     return this.#connections.get(id)?.mongoClient;
   }
 
-  async close() {
+  /**
+   * @param {ConnectionInfo} connectionInfo
+   */
+  saveConnectionInfo(connectionInfo) {
+    if (this.#editable) {
+      this.#connections.set(connectionInfo.id, {
+        mongoClient: new MongoClient(
+          connectionInfo.connectionOptions.connectionString
+        ),
+        connectionInfo,
+      });
+    } else {
+      throw new Error('Editing connections is disabled');
+    }
+  }
+
+  /**
+   * @param {string} id
+   */
+  deleteConnectionInfo(id) {
+    if (this.#editable) {
+      const { mongoClient } = this.#connections.get(id) || {};
+      mongoClient?.close();
+
+      this.#connections.delete(id);
+    } else {
+      throw new Error('Editing connections is disabled');
+    }
+  }
+
+  close() {
     return Promise.all(
       this.#connections.values().map(({ mongoClient }) => mongoClient.close())
     );

@@ -6,8 +6,10 @@
     "format": "./compass/node_modules/.bin/prettier --config ./compass/.prettierrc.json --write \"src/**/*.{ts,tsx,js}\" \"*.js\" \"vendors/*.js\" ",
     "prebuild": "rm -rf dist",
     "build-client": "ELECTRON_OVERRIDE_DIST_PATH=/dev/null ELECTRON_SKIP_BINARY_DOWNLOAD=1 compass/node_modules/.bin/webpack",
+    "bc": "npm run build-client",
     "build-client:production": "ELECTRON_OVERRIDE_DIST_PATH=/dev/null ELECTRON_SKIP_BINARY_DOWNLOAD=1 NODE_ENV=production compass/node_modules/.bin/webpack",
     "build-server": "rollup -c",
+    "bs": "npm run build-server",
     "build-server:production": "NODE_ENV=production rollup -c",
     "start": "node app.js"
   },
