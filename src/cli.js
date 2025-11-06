@@ -86,6 +86,11 @@ function readCliArgs() {
       description: 'Enable upload sample documents to GenAI service.',
       default: false,
     })
+    .options('enable-edit-connections', {
+      type: 'boolean',
+      description: 'Allow user to edit connections in the UI',
+      default: false,
+    })
     .parse();
 
   let mongoURIStrings = args.mongoUri.trim().split(/\s+/);

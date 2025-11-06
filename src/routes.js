@@ -48,6 +48,10 @@ function registerRoutes(instance) {
     enableGenAISampleDocumentPassing: args.enableGenAiSampleDocuments,
   };
 
+  if (args.enableEditConnections) {
+    settings.enableCreatingNewConnections = true;
+  }
+
   if (args.basicAuth) {
     instance.addHook('onRequest', instance.basicAuth);
   }
@@ -101,7 +105,8 @@ function registerRoutes(instance) {
           const clientConnectionString = await createClientSafeConnectionString(
             uri
           );
-          return {
+          /** @type {import('../../compass/packages/connection-info/src/connection-info').ConnectionInfo} */
+          const connectionInfo = {
             id: id,
             connectionOptions: {
               connectionString: clientConnectionString,
@@ -124,9 +129,30 @@ function registerRoutes(instance) {
               },
             },
           };
+
+          return connectionInfo;
         })
       );
       reply.send(connectionInfos);
+    }
+  );
+
+  instance.post(
+    '/explorer/v1/groups/:projectId/clusters/connectionInfo',
+    async (request, reply) => {
+      const connectionInfo = request.body;
+      console.log('New connection info saved', connectionInfo);
+
+      reply.send({ ok: true });
+    }
+  );
+
+  instance.delete(
+    '/explorer/v1/groups/:projectId/clusters/connectionInfo/:connectionId',
+    async (request, reply) => {
+      const connectionId = request.params.connectionId;
+      console.log('Connection info deleted', connectionId);
+      reply.send({ ok: true });
     }
   );
 
