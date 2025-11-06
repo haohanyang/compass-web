@@ -8,6 +8,9 @@ const args = fastify.args;
 /** * @type {import('node-cache')}*/
 const exportIds = fastify.exportIds;
 
+/** * @type {import('./connection-manager').ConnectionManager} */
+const connectionManager = fastify.connectionManager;
+
 let shuttingDown = false;
 
 fastify.listen({ port: args.port, host: args.host }, (err, address) => {
@@ -34,6 +37,7 @@ fastify.listen({ port: args.port, host: args.host }, (err, address) => {
     }, 10 * 1000);
 
     try {
+      await connectionManager.close();
       await fastify.close();
       exportIds.close();
       console.log('Server closed successfully.');

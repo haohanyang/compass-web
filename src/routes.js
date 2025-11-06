@@ -40,8 +40,8 @@ function registerRoutes(instance) {
   /** * @type {import('node-cache')}*/
   const exportIds = instance.exportIds;
 
-  /** @type {Record<string, import('mongodb').MongoClient>} */
-  const mongoClients = instance.mongoClients;
+  /** @type {import('./connection-manager').ConnectionManager>} */
+  const connectionManager = instance.connectionManager;
 
   const settings = {
     enableGenAIFeatures: args.enableGenAiFeatures,
@@ -100,40 +100,8 @@ function registerRoutes(instance) {
   instance.get(
     '/explorer/v1/groups/:projectId/clusters/connectionInfo',
     async (request, reply) => {
-      const connectionInfos = await Promise.all(
-        args.mongoURIs.map(async ({ uri, id }) => {
-          const clientConnectionString = await createClientSafeConnectionString(
-            uri
-          );
-          /** @type {import('../../compass/packages/connection-info/src/connection-info').ConnectionInfo} */
-          const connectionInfo = {
-            id: id,
-            connectionOptions: {
-              connectionString: clientConnectionString,
-            },
-            atlasMetadata: {
-              orgId: args.orgId,
-              projectId: args.projectId,
-              clusterUniqueId: args.clusterId,
-              clusterName:
-                (uri.hosts && uri.hosts[0]) ||
-                uri.hostname ||
-                'unknown-cluster',
-              clusterType: 'REPLICASET',
-              clusterState: 'IDLE',
-              metricsId: 'metricsid',
-              metricsType: 'replicaSet',
-              supports: {
-                globalWrites: false,
-                rollingIndexes: false,
-              },
-            },
-          };
-
-          return connectionInfo;
-        })
-      );
-      reply.send(connectionInfos);
+      const connections = await connectionManager.getAllConnections();
+      reply.send(connections);
     }
   );
 
@@ -205,7 +173,9 @@ function registerRoutes(instance) {
     const exportOptions = exportIds.get(exportId);
 
     if (exportOptions) {
-      const mongoClient = mongoClients[exportOptions.connectionId];
+      const mongoClient = connectionManager.getMongoClientById(
+        exportOptions.connectionId
+      );
 
       if (!mongoClient) {
         reply.status(400).send({
@@ -283,7 +253,7 @@ function registerRoutes(instance) {
   instance.post('/gather-fields', async (request, reply) => {
     const connectionId = request.body.connectionId;
 
-    const mongoClient = mongoClients[connectionId];
+    const mongoClient = connectionManager.getMongoClientById(connectionId);
 
     if (!mongoClient) {
       reply.status(400).send({ error: 'connection id not found' });
@@ -337,7 +307,9 @@ function registerRoutes(instance) {
 
       const body = JSON.parse(rawJson);
 
-      const mongoClient = mongoClients[body.connectionId];
+      const mongoClient = connectionManager.getMongoClientById(
+        body.connectionId
+      );
       if (!mongoClient) {
         reply.status(400).send({ error: 'connection id not found' });
       }
@@ -374,7 +346,9 @@ function registerRoutes(instance) {
 
       const body = JSON.parse(rawJson);
 
-      const mongoClient = mongoClients[body.connectionId];
+      const mongoClient = connectionManager.getMongoClientById(
+        body.connectionId
+      );
       if (!mongoClient) {
         reply.status(400).send({ error: 'connection id not found' });
       }

@@ -1,6 +1,5 @@
 'use strict';
 
-const crypto = require('crypto');
 const yargs = require('yargs');
 const { hideBin } = require('yargs/helpers');
 const { ConnectionString } = require('mongodb-connection-string-url');
@@ -95,7 +94,7 @@ function readCliArgs() {
 
   let mongoURIStrings = args.mongoUri.trim().split(/\s+/);
   /**
-   * @type {Array<{uri: ConnectionString, raw: string, id: string, clientConnectionString?: string}>}
+   * @type {ConnectionString[]}
    */
   const mongoURIs = [];
 
@@ -105,10 +104,7 @@ function readCliArgs() {
     try {
       const mongoUri = new ConnectionString(uri);
 
-      mongoURIs.push({
-        uri: mongoUri,
-        id: crypto.randomBytes(8).toString('hex'),
-      });
+      mongoURIs.push(mongoUri);
     } catch (err) {
       errMessage += `Connection string no.${index + 1} is invalid: ${
         err.message
