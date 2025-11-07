@@ -15,6 +15,7 @@ const {
   parseOptions,
 } = require('mongodb/lib/connection_string');
 const { ConnectionString } = require('mongodb-connection-string-url');
+const { JSONFileWithEncryption } = require('./encryption');
 
 const dbFileName = 'connections.json';
 

@@ -26,7 +26,7 @@ beforeEach(() => {
   }
 });
 
-it('Correctly encrypt connections', async () => {
+it('Should correctly encrypt connections', async () => {
   /** @type {LowT} */
   const db1 = new Low(new JSONFileWithEncryption(dbFilePath, masterPassword), {
     connections: [],
