@@ -44,6 +44,9 @@ importers:
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
+      lowdb:
+        specifier: ^7.0.1
+        version: 7.0.1
       mongodb:
         specifier: ^6.17.0
         version: 6.17.0
@@ -750,6 +753,10 @@ packages:
   lodash@4.17.21:
     resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
 
+  lowdb@7.0.1:
+    resolution: {integrity: sha512-neJAj8GwF0e8EpycYIDFqEPcx9Qz4GUho20jWFR7YiFeXzF1YMLdxB36PypcTSPMA+4+LvgyMacYhlr18Zlymw==}
+    engines: {node: '>=18'}
+
   lru-cache@11.1.0:
     resolution: {integrity: sha512-QIXZUBJUx+2zHUdQujWejBkcD9+cs94tLn0+YL8UrCh+D5sCXZ4c7LaEH48pNwRY3MLDgqUFyhlCyjJPf1WP0A==}
     engines: {node: 20 || >=22}
@@ -1013,6 +1020,10 @@ packages:
   statuses@2.0.1:
     resolution: {integrity: sha512-RwNA9Z/7PrK06rYLIzFMlaF+l73iwpzsqRIFgbMLbTcLD6cOao82TaWefPXQvB2fOC4AjuYSEndS7N/mTCbkdQ==}
     engines: {node: '>= 0.8'}
+
+  steno@4.0.2:
+    resolution: {integrity: sha512-yhPIQXjrlt1xv7dyPQg2P17URmXbuM5pdGkpiMB3RenprfiBlvK415Lctfe0eshk90oA7/tNq7WEiMK8RSP39A==}
+    engines: {node: '>=18'}
 
   stream-chain@2.2.5:
     resolution: {integrity: sha512-1TJmBx6aSWqZ4tx7aTpBDXK0/e2hhcNSTV8+CbFJtDjbb+I1mZ8lHit0Grw9GRT+6JbIrrDd8esncgBi8aBXGA==}
@@ -1833,6 +1844,10 @@ snapshots:
 
   lodash@4.17.21: {}
 
+  lowdb@7.0.1:
+    dependencies:
+      steno: 4.0.2
+
   lru-cache@11.1.0: {}
 
   magic-string@0.30.19:
@@ -2075,6 +2090,8 @@ snapshots:
     optional: true
 
   statuses@2.0.1: {}
+
+  steno@4.0.2: {}
 
   stream-chain@2.2.5: {}
 

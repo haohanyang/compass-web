@@ -37,6 +37,7 @@
     "eta": "^3.5.0",
     "fastify": "^5.3.3",
     "lodash": "^4.17.21",
+    "lowdb": "^7.0.1",
     "mongodb": "^6.17.0",
     "mongodb-connection-string-url": "^3.0.2",
     "mongodb-schema": "^12.5.2",

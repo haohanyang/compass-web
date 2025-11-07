@@ -31,7 +31,15 @@ export class CompassWebConnectionStorage implements ConnectionStorage {
       }
 
       const connectionInfos = (await resp.json()) as ConnectionInfo[];
-      return connectionInfos;
+      return connectionInfos.map((conn) => ({
+        ...conn,
+        connectionOptions: {
+          ...conn.connectionOptions,
+          lookup: () => ({
+            wsURL: `/clusterConnection/${this._projectId}`,
+          }),
+        },
+      }));
     } catch (err) {
       openToast('failed-load-connection-info', {
         title: 'Failed to load project parameters',

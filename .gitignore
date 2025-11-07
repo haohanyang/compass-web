@@ -136,3 +136,4 @@ out/
 compass-import-export/
 
 run.sh
+connections.json

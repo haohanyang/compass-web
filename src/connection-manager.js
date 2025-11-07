@@ -2,15 +2,20 @@
 
 /**
  * @typedef {import('../compass/packages/connection-info/src').ConnectionInfo} ConnectionInfo
+ * @typedef {import('lowdb').Low<{connections: ConnectionInfo[]}>} Low
  */
 
+const path = require('path');
 const { randomBytes } = require('crypto');
 const { MongoClient } = require('mongodb');
+const { JSONFilePreset } = require('lowdb/node');
 const {
   resolveSRVRecord,
   parseOptions,
 } = require('mongodb/lib/connection_string');
 const { ConnectionString } = require('mongodb-connection-string-url');
+
+const dbFileName = 'connections.json';
 
 export class ConnectionManager {
   /**
@@ -19,46 +24,59 @@ export class ConnectionManager {
   #editable;
 
   /**
-   * @type {Map<string, {mongoClient: MongoClient, connectionInfo: ConnectionInfo}>}
+   * Connections from command line
+   * @type {ConnectionInfo[]}>}
    */
-  #connections;
+  #presetConnections;
+
+  /**
+   * Storage of editable connections
+   * @type {Low}
+   */
+  #db;
+
+  /**
+   * @type {Map<string, MongoClient>}
+   */
+  #mongoClients;
 
   constructor(args) {
     this.#editable = args.enableEditConnections;
-
-    this.#connections = new Map();
+    this.#presetConnections = [];
+    this.#mongoClients = new Map();
 
     /** @type {ConnectionString[]} */
     const connectionStrings = args.mongoURIs;
 
-    for (const uri of connectionStrings) {
+    connectionStrings.forEach((uri) => {
       const id = randomBytes(8).toString('hex');
 
-      this.#connections.set(id, {
-        mongoClient: new MongoClient(uri.href),
-        connectionInfo: {
-          id: id,
-          connectionOptions: {
-            connectionString: uri.href,
-          },
-          atlasMetadata: {
-            orgId: args.orgId,
-            projectId: args.projectId,
-            clusterUniqueId: args.clusterId,
-            clusterName:
-              (uri.hosts && uri.hosts[0]) || uri.hostname || 'unknown-cluster',
-            clusterType: 'REPLICASET',
-            clusterState: 'IDLE',
-            metricsId: 'metricsid',
-            metricsType: 'replicaSet',
-            supports: {
-              globalWrites: false,
-              rollingIndexes: false,
-            },
+      /** @type {ConnectionInfo} */
+      const connectionInfo = {
+        id: id,
+        connectionOptions: {
+          connectionString: uri.href,
+        },
+        atlasMetadata: {
+          orgId: args.orgId,
+          projectId: args.projectId,
+          clusterUniqueId: args.clusterId,
+          clusterName:
+            (uri.hosts && uri.hosts[0]) || uri.hostname || 'unknown-cluster',
+          clusterType: 'REPLICASET',
+          clusterState: 'IDLE',
+          metricsId: 'metricsid',
+          metricsType: 'replicaSet',
+          supports: {
+            globalWrites: false,
+            rollingIndexes: false,
           },
         },
-      });
-    }
+      };
+
+      this.#presetConnections.push(connectionInfo);
+      this.#mongoClients.set(id, new MongoClient(uri.href));
+    });
   }
 
   /**
@@ -66,10 +84,18 @@ export class ConnectionManager {
    * @returns {Promise<Array<ConnectionInfo>>}
    */
   async getAllConnections(resolveSrv = true) {
-    /** @type {ConnectionInfo} */
+    let dbData = { connections: [] };
+    if (this.#editable) {
+      dbData = (await this.#getDb()).data;
+    }
+
+    /** @type {ConnectionInfo[]} */
     const connections = [];
 
-    for (const { connectionInfo } of this.#connections.values()) {
+    for (const connectionInfo of [
+      ...this.#presetConnections,
+      ...dbData.connections,
+    ]) {
       if (resolveSrv) {
         const clientConnectionString = await createClientSafeConnectionString(
           new ConnectionString(
@@ -80,6 +106,7 @@ export class ConnectionManager {
         connections.push({
           ...connectionInfo,
           connectionOptions: {
+            ...connectionInfo.connectionOptions,
             connectionString: clientConnectionString,
           },
         });
@@ -91,21 +118,60 @@ export class ConnectionManager {
     return connections;
   }
 
-  getMongoClientById(id) {
-    return this.#connections.get(id)?.mongoClient;
+  async getMongoClientById(id) {
+    /**
+     * @type {MongoClient?}
+     */
+    let mongoClient;
+
+    mongoClient = this.#mongoClients.get(id);
+    if (mongoClient) {
+      return mongoClient;
+    }
+
+    const allConnections = await this.getAllConnections(false);
+    const uri = allConnections.find((c) => c.id === id)?.connectionOptions
+      .connectionString;
+
+    if (uri) {
+      mongoClient = new MongoClient(uri);
+      this.#mongoClients.set(id, mongoClient);
+    }
+
+    return mongoClient;
+  }
+
+  async #getDb() {
+    if (!this.#db) {
+      const storePath = path.resolve(__dirname, '..', dbFileName);
+      this.#db = await JSONFilePreset(storePath, { connections: [] });
+    }
+    return this.#db;
   }
 
   /**
    * @param {ConnectionInfo} connectionInfo
    */
-  saveConnectionInfo(connectionInfo) {
+  async saveConnectionInfo(connectionInfo) {
     if (this.#editable) {
-      this.#connections.set(connectionInfo.id, {
-        mongoClient: new MongoClient(
-          connectionInfo.connectionOptions.connectionString
-        ),
-        connectionInfo,
+      const db = await this.#getDb();
+
+      await db.update(({ connections }) => {
+        const existingIndex = connections.findIndex(
+          (c) => c.id === connectionInfo.id
+        );
+        if (existingIndex === -1) {
+          connections.push(connectionInfo);
+        } else {
+          connections[existingIndex] = connectionInfo;
+        }
       });
+
+      await this.#mongoClients.get(connectionInfo.id)?.close();
+      this.#mongoClients.set(
+        connectionInfo.id,
+        new MongoClient(connectionInfo.connectionOptions.connectionString)
+      );
     } else {
       throw new Error('Editing connections is disabled');
     }
@@ -114,12 +180,15 @@ export class ConnectionManager {
   /**
    * @param {string} id
    */
-  deleteConnectionInfo(id) {
+  async deleteConnectionInfo(id) {
     if (this.#editable) {
-      const { mongoClient } = this.#connections.get(id) || {};
-      mongoClient?.close();
+      const db = await this.#getDb();
 
-      this.#connections.delete(id);
+      await this.#mongoClients.get(id)?.close();
+      this.#mongoClients.delete(id);
+
+      db.data.connections = db.data.connections.filter((c) => c.id !== id);
+      await db.write();
     } else {
       throw new Error('Editing connections is disabled');
     }
@@ -127,7 +196,7 @@ export class ConnectionManager {
 
   close() {
     return Promise.all(
-      this.#connections.values().map(({ mongoClient }) => mongoClient.close())
+      this.#mongoClients.values().map((mongoClient) => mongoClient.close())
     );
   }
 }

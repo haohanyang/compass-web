@@ -115,7 +115,7 @@ function registerRoutes(instance) {
       }
 
       try {
-        connectionManager.saveConnectionInfo(connectionInfo);
+        await connectionManager.saveConnectionInfo(connectionInfo);
         reply.send({ ok: true });
       } catch (err) {
         reply.status(400).send({ error: err.message });
@@ -133,7 +133,7 @@ function registerRoutes(instance) {
         reply.status(400).send({ error: 'connectionId is required' });
       }
       try {
-        connectionManager.deleteConnectionInfo(connectionId);
+        await connectionManager.deleteConnectionInfo(connectionId);
         reply.send({ ok: true });
       } catch (err) {
         reply.status(400).send({ error: err.message });
@@ -190,7 +190,7 @@ function registerRoutes(instance) {
     const exportOptions = exportIds.get(exportId);
 
     if (exportOptions) {
-      const mongoClient = connectionManager.getMongoClientById(
+      const mongoClient = await connectionManager.getMongoClientById(
         exportOptions.connectionId
       );
 
@@ -270,7 +270,9 @@ function registerRoutes(instance) {
   instance.post('/gather-fields', async (request, reply) => {
     const connectionId = request.body.connectionId;
 
-    const mongoClient = connectionManager.getMongoClientById(connectionId);
+    const mongoClient = await connectionManager.getMongoClientById(
+      connectionId
+    );
 
     if (!mongoClient) {
       reply.status(400).send({ error: 'connection id not found' });
@@ -324,7 +326,7 @@ function registerRoutes(instance) {
 
       const body = JSON.parse(rawJson);
 
-      const mongoClient = connectionManager.getMongoClientById(
+      const mongoClient = await connectionManager.getMongoClientById(
         body.connectionId
       );
       if (!mongoClient) {
@@ -363,7 +365,7 @@ function registerRoutes(instance) {
 
       const body = JSON.parse(rawJson);
 
-      const mongoClient = connectionManager.getMongoClientById(
+      const mongoClient = await connectionManager.getMongoClientById(
         body.connectionId
       );
       if (!mongoClient) {
