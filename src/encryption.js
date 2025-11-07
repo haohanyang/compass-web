@@ -4,6 +4,7 @@
  */
 
 const path = require('path');
+const fs = require('fs').promises;
 const crypto = require('crypto');
 const { JSONFile } = require('lowdb/node');
 
@@ -36,10 +37,15 @@ export class JSONFileWithEncryption extends JSONFile {
   /**
    * @param {PathLike} filename
    * @param {string} masterPassword
+   * @param {string?} [salt]
    */
-  constructor(filename, masterPassword) {
+  constructor(filename, masterPassword, salt = undefined) {
     super(filename);
     this.#masterPassword = masterPassword;
+
+    if (salt) {
+      this.#salt = Buffer.from(salt, 'hex');
+    }
   }
 
   /**

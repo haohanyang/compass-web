@@ -11,10 +11,12 @@
     "build-server": "rollup -c",
     "bs": "npm run build-server",
     "build-server:production": "NODE_ENV=production rollup -c",
-    "start": "node app.js"
+    "start": "node app.js",
+    "test": "mocha"
   },
   "author": "Haohan Yang",
   "license": "SSPL",
+  "type": "commonjs",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/haohanyang/compass-web.git"
@@ -50,10 +52,13 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.28.5",
+    "@babel/register": "^7.28.3",
     "@rollup/plugin-alias": "^5.1.1",
     "@rollup/plugin-commonjs": "^28.0.8",
     "@rollup/plugin-json": "^6.1.0",
     "copy-webpack-plugin": "^13.0.0",
+    "mocha": "^11.7.5",
     "rollup": "^4.52.5"
   },
   "pnpm": {},
