@@ -93,7 +93,7 @@ export class ConnectionManager {
   async getAllConnections(resolveSrv = true) {
     let dbData = { connections: [] };
     if (this.#editable) {
-      dbData = this.#getDb().data;
+      dbData = (await this.#getDb()).data;
     }
 
     /** @type {ConnectionInfo[]} */
@@ -149,9 +149,9 @@ export class ConnectionManager {
   }
 
   /**
-   * @returns {LowT}
+   * @returns {Promise<LowT>}
    */
-  #getDb() {
+  async #getDb() {
     if (!this.#db) {
       const storePath = path.resolve(__dirname, '..', dbFileName);
 
@@ -161,6 +161,8 @@ export class ConnectionManager {
           connections: [],
         }
       );
+
+      await this.#db.read();
     }
     return this.#db;
   }
@@ -170,7 +172,7 @@ export class ConnectionManager {
    */
   async saveConnectionInfo(connectionInfo) {
     if (this.#editable) {
-      const db = this.#getDb();
+      const db = await this.#getDb();
 
       await db.update(({ connections }) => {
         const existingIndex = connections.findIndex(
@@ -198,7 +200,7 @@ export class ConnectionManager {
    */
   async deleteConnectionInfo(id) {
     if (this.#editable) {
-      const db = this.#getDb();
+      const db = await this.#getDb();
 
       await this.#mongoClients.get(id)?.close();
       this.#mongoClients.delete(id);

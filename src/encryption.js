@@ -37,15 +37,10 @@ export class JSONFileWithEncryption extends JSONFile {
   /**
    * @param {PathLike} filename
    * @param {string} masterPassword
-   * @param {string?} [salt]
    */
-  constructor(filename, masterPassword, salt = undefined) {
+  constructor(filename, masterPassword) {
     super(filename);
     this.#masterPassword = masterPassword;
-
-    if (salt) {
-      this.#salt = Buffer.from(salt, 'hex');
-    }
   }
 
   /**
@@ -137,7 +132,8 @@ export class JSONFileWithEncryption extends JSONFile {
    */
   async read() {
     /** @type {DbData} */
-    const { connections: encryptedConnections } = super.read();
+    const { connections: encryptedConnections = [] } =
+      (await super.read()) || {};
 
     const decryptedConnections = await Promise.all(
       encryptedConnections.map(async (conn) => {
