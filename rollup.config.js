@@ -25,6 +25,7 @@ const options = {
     'openai',
     'openai/helpers/zod',
     'lowdb',
+    'lowdb/node',
   ],
   plugins: [
     json(),

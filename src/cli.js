@@ -90,6 +90,11 @@ function readCliArgs() {
       description: 'Allow user to edit connections in the UI',
       default: false,
     })
+    .options('master-password', {
+      type: 'string',
+      description: 'Master password to encrypt/decrypt connection credentials',
+      default: 'default-master-password',
+    })
     .parse();
 
   let mongoURIStrings = args.mongoUri.trim().split(/\s+/);

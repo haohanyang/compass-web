@@ -32,3 +32,4 @@ compass-import-export
 rollup.config.js
 vendors
 connections.json
+connections.salt
