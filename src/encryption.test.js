@@ -5,8 +5,7 @@
  */
 
 const path = require('path');
-const fs = require('fs');
-const fsPromises = require('fs').promises;
+const fs = require('fs').promises;
 const assert = require('assert');
 const { Low } = require('lowdb');
 const { JSONFileWithEncryption } = require('./encryption');
@@ -18,10 +17,14 @@ const saltFilePath = path.join(__dirname, '..', 'test-encryption.salt');
 
 const connectionString = 'mongodb://username:password@localhost:27017';
 
-beforeEach(() => {
+beforeEach(async () => {
   for (const filePath of [dbFilePath, saltFilePath]) {
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    try {
+      await fs.unlink(filePath)
+    } catch (err) {
+       if (err.code !== 'ENOENT') {
+        throw err
+      }
     }
   }
 });

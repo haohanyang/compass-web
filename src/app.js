@@ -2,7 +2,7 @@
 
 const { Eta } = require('eta');
 const NodeCache = require('node-cache');
-const { ConnectionManager } = require('./connection-manager');
+const { InMemoryConnectionManager } = require('./connection-manager');
 const { readCliArgs } = require('./cli');
 const { registerWs } = require('./ws');
 const { registerAuth } = require('./auth');
@@ -10,7 +10,7 @@ const { registerRoutes } = require('./routes');
 
 const args = readCliArgs();
 
-const connectionManager = new ConnectionManager(args);
+const connectionManager = new InMemoryConnectionManager(args);
 
 const exportIds = new NodeCache({ stdTTL: 3600 });
 

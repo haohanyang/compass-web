@@ -4,25 +4,31 @@
  * @typedef {import('lowdb').Low<DbData>} LowT
  */
 const path = require('path');
-const fs = require('fs');
-const fsPromises = require('fs').promises;
+const fs = require('fs').promises;
 const assert = require('assert');
 const { ConnectionString } = require('mongodb-connection-string-url');
-const { ConnectionManager } = require('./connection-manager');
+const { EncryptedJsonFileConnectionManager } = require('./connection-manager');
 
 const dbFilePath = path.join(__dirname, '..', 'connections.json');
 const saltFilePath = path.join(__dirname, '..', 'connections.salt');
 
-beforeEach(() => {
+
+
+describe('Test EncryptedJsonFileConnectionManager', () => {
+  beforeEach(async () => {
   for (const filePath of [dbFilePath, saltFilePath]) {
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    try {
+      await fs.unlink(filePath);
+    } catch (err) {
+      if (err.code !== 'ENOENT') {
+        throw err
+      }
     }
   }
 });
 
 it('Should add new connection and encrypt connection string', async () => {
-  const manager = new ConnectionManager({
+  const manager = new EncryptedJsonFileConnectionManager({
     enableEditConnections: true,
     mongoURIs: [new ConnectionString('mongodb://localhost:27017')],
     masterPassword: 'masterPassword',
@@ -53,3 +59,6 @@ it('Should add new connection and encrypt connection string', async () => {
     'mongodb://user:pass@localhost:27018'
   );
 });
+
+})
+

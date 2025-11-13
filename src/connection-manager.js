@@ -19,7 +19,166 @@ const { JSONFileWithEncryption } = require('./encryption');
 
 const dbFileName = 'connections.json';
 
+/**
+ * Base class
+ * @class
+ */
 export class ConnectionManager {
+  constructor() {
+    if (new.target === ConnectionManager) {
+      throw new TypeError("Cannot instantiate ConnectionManager");
+    }
+  }
+
+  /**
+   * @param {boolean} [resolveSrv=true] resolveSrv
+   * @returns {Promise<Array<ConnectionInfo>>}
+   */
+  async getAllConnections(resolveSrv = true) {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   *
+   * @param {string} id
+   * @returns {Promise<MongoClient?>}
+   */
+  async getMongoClientById(id) {
+    throw new Error('Not implemented');
+  }
+
+
+  /**
+   * @param {ConnectionInfo} connectionInfo
+   * @return {Promise<void>}
+   */
+  async saveConnectionInfo(connectionInfo) {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * @param {string} id
+   * @return {Promise<void>}
+   */
+  async deleteConnectionInfo(id) {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * @returns {Promise<void>}
+   */
+  close() {
+    throw new Error('Not implemented');
+  }
+}
+
+/**
+ * @class
+ * @extends {ConnectionManager}
+ */
+export class InMemoryConnectionManager extends ConnectionManager {
+  /**
+   * @type {boolean}
+   */
+  #editable;
+
+  /**
+   * @type {Map<string, {mongoClient: MongoClient, connectionInfo: ConnectionInfo}>}
+   */
+  #connections;
+
+
+  constructor(args) {
+    this.#editable = args.enableEditConnections;
+
+    this.#connections = new Map();
+
+    /** @type {ConnectionString[]} */
+    const connectionStrings = args.mongoURIs;
+
+    for (const uri of connectionStrings) {
+      const id = randomBytes(8).toString('hex');
+
+      this.#connections.set(id, {
+        mongoClient: new MongoClient(uri.href),
+        connectionInfo: {
+          id: id,
+          connectionOptions: {
+            connectionString: uri.href,
+          },
+          atlasMetadata: {
+            orgId: args.orgId,
+            projectId: args.projectId,
+            clusterUniqueId: args.clusterId,
+            clusterName:
+              (uri.hosts && uri.hosts[0]) || uri.hostname || 'unknown-cluster',
+            clusterType: 'REPLICASET',
+            clusterState: 'IDLE',
+            metricsId: 'metricsid',
+            metricsType: 'replicaSet',
+            supports: {
+              globalWrites: false,
+              rollingIndexes: false,
+            },
+          },
+        },
+      });
+    }
+  }
+
+  async getAllConnections(resolveSrv = true) {
+    /** @type {ConnectionInfo} */
+    const connections = [];
+
+    for (const { connectionInfo } of this.#connections.values()) {
+      if (resolveSrv) {
+        const clientConnectionString = await createClientSafeConnectionString(
+          new ConnectionString(
+            connectionInfo.connectionOptions.connectionString
+          )
+        );
+
+        connections.push({
+          ...connectionInfo,
+          connectionOptions: {
+            connectionString: clientConnectionString,
+          },
+        });
+      } else {
+        connections.push(connectionInfo);
+      }
+    }
+
+    return connections;
+  }
+
+  getMongoClientById(id) {
+    return Promise.resolve(this.#connections.get(id)?.mongoClient);
+  }
+
+  async deleteConnectionInfo(id) {
+    if (this.#editable) {
+      const { mongoClient } = this.#connections.get(id) || {};
+      await mongoClient?.close();
+
+      this.#connections.delete(id);
+    } else {
+      throw new Error('Editing connections is disabled');
+    }
+  }
+
+  async close() {
+    await Promise.all(
+      this.#connections.values().map(({ mongoClient }) => mongoClient.close())
+    );
+  }
+}
+
+/**
+ * @class
+ * @extends {ConnectionManager}
+ */
+export class EncryptedJsonFileConnectionManager extends ConnectionManager {
   /**
    * @type {boolean}
    */
@@ -87,10 +246,6 @@ export class ConnectionManager {
     });
   }
 
-  /**
-   * @param {boolean} resolveSrv
-   * @returns {Promise<Array<ConnectionInfo>>}
-   */
   async getAllConnections(resolveSrv = true) {
     let dbData = { connections: [] };
     if (this.#editable) {
@@ -168,9 +323,6 @@ export class ConnectionManager {
     return this.#db;
   }
 
-  /**
-   * @param {ConnectionInfo} connectionInfo
-   */
   async saveConnectionInfo(connectionInfo) {
     if (this.#editable) {
       const db = await this.#getDb();
@@ -196,9 +348,6 @@ export class ConnectionManager {
     }
   }
 
-  /**
-   * @param {string} id
-   */
   async deleteConnectionInfo(id) {
     if (this.#editable) {
       const db = await this.#getDb();
@@ -213,8 +362,8 @@ export class ConnectionManager {
     }
   }
 
-  close() {
-    return Promise.all(
+  async close() {
+    await Promise.all(
       this.#mongoClients.values().map((mongoClient) => mongoClient.close())
     );
   }
