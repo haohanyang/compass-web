@@ -32,7 +32,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - name: Bootstrap
-        run: bash bootstrap.sh
+        run: npm uninstall node-gyp -g && bash bootstrap.sh
       - run: pnpm i --frozen-lockfile
       - name: Build frontend
         run: pnpm run build-client
