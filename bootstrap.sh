@@ -7,6 +7,8 @@ export ELECTRON_SKIP_BINARY_DOWNLOAD=1
 
 cd compass
 
+node ../scripts/remove-dep.js --dep node-gyp
+
 npm ci
 
 node_modules/.bin/lerna run bootstrap --stream \
