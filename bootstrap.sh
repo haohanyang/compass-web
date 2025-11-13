@@ -7,7 +7,7 @@ export ELECTRON_SKIP_BINARY_DOWNLOAD=1
 
 cd compass
 
-node ../scripts/remove-dep.js --dep node-gyp
+node ../scripts/remove-dep.js node-gyp
 
 npm ci
 

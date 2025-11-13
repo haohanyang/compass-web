@@ -1,28 +1,17 @@
 const fs = require('fs');
-const yargs = require('yargs');
-const { hideBin } = require('yargs/helpers');
 
-const args = yargs(hideBin(process.argv))
-  .option('dep', {
-    type: 'string',
-    description: 'Name of the dependency to remove',
-    demandOption: true,
-  })
-  .option('file', {
-    type: 'string',
-    description: 'Path to the package.json file',
-    default: 'package.json',
-  })
-  .parse();
+const dep = process.argv[2];
 
-const pkgJson = JSON.parse(fs.readFileSync(args.file, 'utf-8'));
+const pkgJsonPath = 'package.json';
 
-if (pkgJson.dependencies && pkgJson.dependencies[args.dep]) {
-  delete pkgJson.dependencies[args.dep];
+const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8'));
+
+if (pkgJson.dependencies && pkgJson.dependencies[dep]) {
+  delete pkgJson.dependencies[dep];
 }
 
-if (pkgJson.devDependencies && pkgJson.devDependencies[args.dep]) {
-  delete pkgJson.devDependencies[args.dep];
+if (pkgJson.devDependencies && pkgJson.devDependencies[dep]) {
+  delete pkgJson.devDependencies[dep];
 }
 
-fs.writeFileSync(args.file, JSON.stringify(pkgJson, null, 2) + '\n', 'utf-8');
+fs.writeFileSync(pkgJsonPath, JSON.stringify(pkgJson, null, 2) + '\n', 'utf-8');
