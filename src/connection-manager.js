@@ -26,7 +26,7 @@ const dbFileName = 'connections.json';
 export class ConnectionManager {
   constructor() {
     if (new.target === ConnectionManager) {
-      throw new TypeError("Cannot instantiate ConnectionManager");
+      throw new TypeError('Cannot instantiate ConnectionManager');
     }
   }
 
@@ -46,7 +46,6 @@ export class ConnectionManager {
   async getMongoClientById(id) {
     throw new Error('Not implemented');
   }
-
 
   /**
    * @param {ConnectionInfo} connectionInfo
@@ -86,7 +85,6 @@ export class InMemoryConnectionManager extends ConnectionManager {
    * @type {Map<string, {mongoClient: MongoClient, connectionInfo: ConnectionInfo}>}
    */
   #connections;
-
 
   constructor(args) {
     this.#editable = args.enableEditConnections;

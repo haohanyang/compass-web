@@ -20,10 +20,10 @@ const connectionString = 'mongodb://username:password@localhost:27017';
 beforeEach(async () => {
   for (const filePath of [dbFilePath, saltFilePath]) {
     try {
-      await fs.unlink(filePath)
+      await fs.unlink(filePath);
     } catch (err) {
-       if (err.code !== 'ENOENT') {
-        throw err
+      if (err.code !== 'ENOENT') {
+        throw err;
       }
     }
   }

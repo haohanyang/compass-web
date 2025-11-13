@@ -16,7 +16,6 @@
   },
   "author": "Haohan Yang",
   "license": "SSPL",
-  "type": "commonjs",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/haohanyang/compass-web.git"
