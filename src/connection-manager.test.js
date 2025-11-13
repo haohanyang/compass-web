@@ -47,9 +47,7 @@ describe('Test EncryptedJsonFileConnectionManager', () => {
 
     // Verify that the connection string is actually encrypted in the file
     /** @type {DbData} */
-    const dbFileContent = JSON.parse(
-      await fsPromises.readFile(dbFilePath, 'utf-8')
-    );
+    const dbFileContent = JSON.parse(await fs.readFile(dbFilePath, 'utf-8'));
 
     assert.strictEqual(dbFileContent.connections.length, 1);
     assert.notStrictEqual(

@@ -51,9 +51,7 @@ it('Should correctly encrypt connections', async () => {
   );
 
   /** @type {DbData} */
-  const encryptedData = JSON.parse(
-    await fsPromises.readFile(dbFilePath, 'utf8')
-  );
+  const encryptedData = JSON.parse(await fs.readFile(dbFilePath, 'utf8'));
   assert.strictEqual(encryptedData.connections.length, 1);
   assert.notStrictEqual(
     encryptedData.connections[0].connectionOptions.connectionString,
