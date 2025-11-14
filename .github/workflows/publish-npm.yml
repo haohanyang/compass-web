@@ -6,7 +6,7 @@ on:
       tag:
         description: "Tag to publish"
         type: choice
-        default: latest
+        required: true
         options:
         - latest
         - alpha
