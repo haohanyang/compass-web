@@ -1,23 +1,16 @@
 'use strict';
 
-const { MongoClient } = require('mongodb');
 const { Eta } = require('eta');
 const NodeCache = require('node-cache');
+const { InMemoryConnectionManager } = require('./connection-manager');
 const { readCliArgs } = require('./cli');
-const { registerWs } = require('./ws');
 const { registerAuth } = require('./auth');
-const { registerRoutes } = require('./routes');
 
 const args = readCliArgs();
 
+const connectionManager = new InMemoryConnectionManager(args);
+
 const exportIds = new NodeCache({ stdTTL: 3600 });
-
-/** @type {Record<string, MongoClient} */
-const mongoClients = {};
-
-for (const { uri, id } of args.mongoURIs) {
-  mongoClients[id] = new MongoClient(uri.href);
-}
 
 const fastify = require('fastify')({
   logger: true,
@@ -27,7 +20,7 @@ fastify.decorate('args', args);
 
 fastify.decorate('exportIds', exportIds);
 
-fastify.decorate('mongoClients', mongoClients);
+fastify.decorate('connectionManager', connectionManager);
 
 fastify.register(require('@fastify/static'), {
   root: __dirname,
@@ -57,12 +50,11 @@ fastify.register(require('@fastify/csrf-protection'), {
 // File upload
 fastify.register(require('@fastify/multipart'));
 
-registerWs(fastify);
-
 registerAuth(fastify);
 
 fastify.after(() => {
-  registerRoutes(fastify);
+  fastify.register(require('./ws'));
+  fastify.register(require('./routes'));
 });
 
 module.exports = fastify;

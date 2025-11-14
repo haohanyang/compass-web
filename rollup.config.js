@@ -24,6 +24,8 @@ const options = {
     'stream-json/streamers/StreamArray',
     'openai',
     'openai/helpers/zod',
+    'lowdb',
+    'lowdb/node',
   ],
   plugins: [
     json(),

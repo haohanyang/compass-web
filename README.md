@@ -24,6 +24,7 @@ Not all Compass Desktop features are available on Compass Web. Here is non-exhau
 - ~~Export to JSON/CSV~~ (Supported since 0.2.2)
 - ~~Import from JSON/CSV~~ (Supported since 0.2.3)
 - ~~Gen AI~~ (Supported since 0.3.0)
+- ~~Edit MongoDB Connections in UI~~ (Supported since 0.4.0)
 - Mongo Shell
 - Proxy
 
@@ -88,6 +89,7 @@ You can configure `compass-web` using command-line arguments or environment vari
 | `--openai-model`                   | string | `CW_OPENAI_MODEL`                   | OpenAI model used in GenAI service                                                  | `gpt-5-mini`                          |
 | `--enable-gen-ai-features`         | bool   | `CW_ENABLE_GEN_AI_FEATURES`         | Enable GenAI features                                                               | `false`                               |
 | `--enable-gen-ai-sample-documents` | bool   | `CW_ENABLE_GEN_AI_SAMPLE_DOCUMENTS` | Enable upload sample documents to GenAI Service                                     | `false`                               |
+| `--enable-edit-connections`        | bool   | `CW_ENABLE_EDIT_CONNECTIONS`        | Allow user to edit connections in the UI                                            | `false`                               |
 
 ## Settings
 

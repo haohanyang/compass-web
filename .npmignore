@@ -31,3 +31,8 @@ scripts
 compass-import-export
 rollup.config.js
 vendors
+connections.json
+connections.salt
+test-encryption.json
+test-encryption.salt
+.mocharc.js

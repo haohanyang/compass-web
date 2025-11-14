@@ -1,6 +1,5 @@
 'use strict';
 
-const crypto = require('crypto');
 const yargs = require('yargs');
 const { hideBin } = require('yargs/helpers');
 const { ConnectionString } = require('mongodb-connection-string-url');
@@ -86,11 +85,21 @@ function readCliArgs() {
       description: 'Enable upload sample documents to GenAI service.',
       default: false,
     })
+    .options('enable-edit-connections', {
+      type: 'boolean',
+      description: 'Allow user to edit connections in the UI',
+      default: false,
+    })
+    .options('master-password', {
+      type: 'string',
+      description: 'Master password to encrypt/decrypt connection credentials',
+      default: 'default-master-password',
+    })
     .parse();
 
   let mongoURIStrings = args.mongoUri.trim().split(/\s+/);
   /**
-   * @type {Array<{uri: ConnectionString, raw: string, id: string, clientConnectionString?: string}>}
+   * @type {ConnectionString[]}
    */
   const mongoURIs = [];
 
@@ -100,10 +109,7 @@ function readCliArgs() {
     try {
       const mongoUri = new ConnectionString(uri);
 
-      mongoURIs.push({
-        uri: mongoUri,
-        id: crypto.randomBytes(8).toString('hex'),
-      });
+      mongoURIs.push(mongoUri);
     } catch (err) {
       errMessage += `Connection string no.${index + 1} is invalid: ${
         err.message

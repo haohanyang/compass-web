@@ -148,7 +148,6 @@ class CompassWebPreferencesStorage implements PreferencesStorage {
 export function useCompassWebPreferences(
   initialPreferences?: Partial<AllPreferences>
 ): React.MutableRefObject<CompassWebPreferencesAccess> {
-  console.log('Initial Preferences:', initialPreferences);
   const preferencesAccess = useRef(
     new CompassWebPreferencesAccess(initialPreferences)
   );

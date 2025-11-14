@@ -1,9 +1,5 @@
 const crypto = require('crypto');
 const { Writable } = require('stream');
-const {
-  resolveSRVRecord,
-  parseOptions,
-} = require('mongodb/lib/connection_string');
 const { generateQuery, generateAggregation } = require('./gen-ai');
 const DataService = require('./data-service');
 const {
@@ -31,39 +27,44 @@ const {
 const pkgJson = require('../package.json');
 
 /**
- *
- * @param {import('fastify').FastifyInstance} instance
+ * @param {import('fastify').FastifyInstance} fastify
+ * @param {import('fastify').FastifyPluginOptions} opts
+ * @param {import('fastify').FastifyPluginCallback} done
  */
-function registerRoutes(instance) {
-  const args = instance.args;
+module.exports = function (fastify, opts, done) {
+  const args = fastify.args;
 
   /** * @type {import('node-cache')}*/
-  const exportIds = instance.exportIds;
+  const exportIds = fastify.exportIds;
 
-  /** @type {Record<string, import('mongodb').MongoClient>} */
-  const mongoClients = instance.mongoClients;
+  /** @type {import('./connection-manager').ConnectionManager>} */
+  const connectionManager = fastify.connectionManager;
 
   const settings = {
     enableGenAIFeatures: args.enableGenAiFeatures,
     enableGenAISampleDocumentPassing: args.enableGenAiSampleDocuments,
   };
 
-  if (args.basicAuth) {
-    instance.addHook('onRequest', instance.basicAuth);
+  if (args.enableEditConnections) {
+    settings.enableCreatingNewConnections = true;
   }
 
-  instance.get('/version', (request, reply) => {
+  if (args.basicAuth) {
+    fastify.addHook('onRequest', fastify.basicAuth);
+  }
+
+  fastify.get('/version', (request, reply) => {
     reply.send({
       version: pkgJson.version,
       source: `https://github.com/haohanyang/compass-web/tree/v${pkgJson.version}`,
     });
   });
 
-  instance.get('/projectId', (request, reply) => {
+  fastify.get('/projectId', (request, reply) => {
     reply.type('text/plain').send(args.projectId);
   });
 
-  instance.get('/cloud-mongodb-com/v2/:projectId/params', (request, reply) => {
+  fastify.get('/cloud-mongodb-com/v2/:projectId/params', (request, reply) => {
     if (request.params.projectId == args.projectId) {
       const preferences = settings;
 
@@ -93,60 +94,64 @@ function registerRoutes(instance) {
     }
   });
 
-  instance.get(
+  fastify.get(
     '/explorer/v1/groups/:projectId/clusters/connectionInfo',
     async (request, reply) => {
-      const connectionInfos = await Promise.all(
-        args.mongoURIs.map(async ({ uri, id }) => {
-          const clientConnectionString = await createClientSafeConnectionString(
-            uri
-          );
-          return {
-            id: id,
-            connectionOptions: {
-              connectionString: clientConnectionString,
-            },
-            atlasMetadata: {
-              orgId: args.orgId,
-              projectId: args.projectId,
-              clusterUniqueId: args.clusterId,
-              clusterName:
-                (uri.hosts && uri.hosts[0]) ||
-                uri.hostname ||
-                'unknown-cluster',
-              clusterType: 'REPLICASET',
-              clusterState: 'IDLE',
-              metricsId: 'metricsid',
-              metricsType: 'replicaSet',
-              supports: {
-                globalWrites: false,
-                rollingIndexes: false,
-              },
-            },
-          };
-        })
-      );
-      reply.send(connectionInfos);
+      const connections = await connectionManager.getAllConnections();
+      reply.send(connections);
+    }
+  );
+
+  // Save connection
+  fastify.post(
+    '/explorer/v1/groups/:projectId/clusters/connectionInfo',
+    async (request, reply) => {
+      const connectionInfo = request.body;
+      if (!connectionInfo) {
+        reply.status(400).send({ error: 'connectionInfo is required' });
+      }
+
+      try {
+        await connectionManager.saveConnectionInfo(connectionInfo);
+        reply.send({ ok: true });
+      } catch (err) {
+        reply.status(400).send({ error: err.message });
+      }
+    }
+  );
+
+  // Delete connection
+  fastify.delete(
+    '/explorer/v1/groups/:projectId/clusters/connectionInfo/:connectionId',
+    async (request, reply) => {
+      const connectionId = request.params.connectionId;
+
+      if (!connectionId) {
+        reply.status(400).send({ error: 'connectionId is required' });
+      }
+      try {
+        await connectionManager.deleteConnectionInfo(connectionId);
+        reply.send({ ok: true });
+      } catch (err) {
+        reply.status(400).send({ error: err.message });
+      }
     }
   );
 
   // Settings
-  instance.get('/settings', (request, reply) => {
+  fastify.get('/settings', (request, reply) => {
     reply.send(settings);
   });
 
-  instance.post(
-    '/settings/optInDataExplorerGenAIFeatures',
-    (request, reply) => {
-      settings.optInDataExplorerGenAIFeatures = request.body.value;
+  fastify.post('/settings/optInDataExplorerGenAIFeatures', (request, reply) => {
+    settings.optInDataExplorerGenAIFeatures = request.body.value;
 
-      reply.send({ ok: true });
-    }
-  );
+    reply.send({ ok: true });
+  });
 
-  instance.post(
+  fastify.post(
     '/export-csv',
-    { preHandler: instance.csrfProtection },
+    { preHandler: fastify.csrfProtection },
     (request, reply) => {
       // TODO: validate
       const exportId = crypto.randomBytes(8).toString('hex');
@@ -159,9 +164,9 @@ function registerRoutes(instance) {
     }
   );
 
-  instance.post(
+  fastify.post(
     '/export-json',
-    { preHandler: instance.csrfProtection },
+    { preHandler: fastify.csrfProtection },
     (request, reply) => {
       // TODO: validate
       const exportId = crypto.randomBytes(8).toString('hex');
@@ -174,12 +179,14 @@ function registerRoutes(instance) {
     }
   );
 
-  instance.get('/export/:exportId', async (request, reply) => {
+  fastify.get('/export/:exportId', async (request, reply) => {
     const exportId = request.params.exportId;
     const exportOptions = exportIds.get(exportId);
 
     if (exportOptions) {
-      const mongoClient = mongoClients[exportOptions.connectionId];
+      const mongoClient = await connectionManager.getMongoClientById(
+        exportOptions.connectionId
+      );
 
       if (!mongoClient) {
         reply.status(400).send({
@@ -254,10 +261,12 @@ function registerRoutes(instance) {
     }
   });
 
-  instance.post('/gather-fields', async (request, reply) => {
+  fastify.post('/gather-fields', async (request, reply) => {
     const connectionId = request.body.connectionId;
 
-    const mongoClient = mongoClients[connectionId];
+    const mongoClient = await connectionManager.getMongoClientById(
+      connectionId
+    );
 
     if (!mongoClient) {
       reply.status(400).send({ error: 'connection id not found' });
@@ -276,9 +285,9 @@ function registerRoutes(instance) {
     });
   });
 
-  instance.post(
+  fastify.post(
     '/guess-filetype',
-    { onRequest: instance.csrfProtection },
+    { onRequest: fastify.csrfProtection },
     async (request, reply) => {
       const file = await request.file();
 
@@ -294,9 +303,9 @@ function registerRoutes(instance) {
     }
   );
 
-  instance.post(
+  fastify.post(
     '/upload-json',
-    { preHandler: instance.csrfProtection },
+    { preHandler: fastify.csrfProtection },
     async (request, reply) => {
       const file = await request.file();
 
@@ -311,7 +320,9 @@ function registerRoutes(instance) {
 
       const body = JSON.parse(rawJson);
 
-      const mongoClient = mongoClients[body.connectionId];
+      const mongoClient = await connectionManager.getMongoClientById(
+        body.connectionId
+      );
       if (!mongoClient) {
         reply.status(400).send({ error: 'connection id not found' });
       }
@@ -331,9 +342,9 @@ function registerRoutes(instance) {
     }
   );
 
-  instance.post(
+  fastify.post(
     '/upload-csv',
-    { preHandler: instance.csrfProtection },
+    { preHandler: fastify.csrfProtection },
     async (request, reply) => {
       const file = await request.file();
 
@@ -348,7 +359,9 @@ function registerRoutes(instance) {
 
       const body = JSON.parse(rawJson);
 
-      const mongoClient = mongoClients[body.connectionId];
+      const mongoClient = await connectionManager.getMongoClientById(
+        body.connectionId
+      );
       if (!mongoClient) {
         reply.status(400).send({ error: 'connection id not found' });
       }
@@ -368,9 +381,9 @@ function registerRoutes(instance) {
     }
   );
 
-  instance.post(
+  fastify.post(
     '/list-csv-fields',
-    { preHandler: instance.csrfProtection },
+    { preHandler: fastify.csrfProtection },
     async (request, reply) => {
       const file = await request.file();
 
@@ -399,9 +412,9 @@ function registerRoutes(instance) {
     }
   );
 
-  instance.post(
+  fastify.post(
     '/analyze-csv-fields',
-    { preHandler: instance.csrfProtection },
+    { preHandler: fastify.csrfProtection },
     async (request, reply) => {
       const file = await request.file();
 
@@ -430,9 +443,9 @@ function registerRoutes(instance) {
     }
   );
 
-  instance.post(
+  fastify.post(
     '/ai/v1/groups/:projectId/mql-query',
-    { preHandler: instance.csrfProtection },
+    { preHandler: fastify.csrfProtection },
     async (request, reply) => {
       const projectId = request.params.projectId;
       if (projectId !== args.projectId) {
@@ -465,9 +478,9 @@ function registerRoutes(instance) {
     }
   );
 
-  instance.post(
+  fastify.post(
     '/ai/v1/groups/:projectId/mql-aggregation',
-    { preHandler: instance.csrfProtection },
+    { preHandler: fastify.csrfProtection },
     async (request, reply) => {
       const projectId = request.params.projectId;
       if (projectId !== args.projectId) {
@@ -502,40 +515,10 @@ function registerRoutes(instance) {
     }
   );
 
-  instance.setNotFoundHandler((request, reply) => {
+  fastify.setNotFoundHandler((request, reply) => {
     const csrfToken = reply.generateCsrf();
     reply.view('index.eta', { csrfToken, appName: args.appName });
   });
-}
 
-/**
- * Create a client-safe connection string that avoids problematic SRV parsing in the frontend.
- * The compass frontend has code paths that assume hosts array exists when parsing connection strings.
- * For SRV URIs, we'll resolve the actual hosts and ports using the MongoDB driver utilities.
- * @param {import('mongodb-connection-string-url').ConnectionString} cs
- */
-async function createClientSafeConnectionString(cs) {
-  try {
-    const isSrv = cs.isSRV;
-
-    if (!isSrv) {
-      return cs.href; // Non-SRV URIs are fine as-is
-    }
-
-    const res = await resolveSRVRecord(parseOptions(cs.href));
-
-    const csCopy = cs.clone();
-    csCopy.protocol = 'mongodb';
-    csCopy.hosts = res.map((address) => address.toString());
-
-    return csCopy.toString();
-  } catch (err) {
-    console.error(
-      `Failed to create client safe connection string: ${cs.redact().href}`,
-      err
-    );
-    return cs.href; // Fallback to original if SRV resolution fails
-  }
-}
-
-module.exports = { registerRoutes };
+  done();
+};
