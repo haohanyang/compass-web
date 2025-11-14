@@ -5,8 +5,13 @@ on:
     inputs:
       tag:
         description: "Tag to publish"
-        required: false
-        default: "latest"
+        type: choice
+        required: true
+        options:
+        - latest
+        - alpha
+        - beta
+        - rc
 
 jobs:
   publish-npm:
