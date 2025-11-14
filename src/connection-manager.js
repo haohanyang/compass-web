@@ -97,7 +97,7 @@ class InMemoryConnectionManager extends ConnectionManager {
     const connectionStrings = args.mongoURIs;
 
     for (const uri of connectionStrings) {
-      const id = randomBytes(8).toString('hex');
+      const id = crypto.randomBytes(8).toString('hex');
 
       this.#connections.set(id, {
         mongoClient: new MongoClient(uri.href),
