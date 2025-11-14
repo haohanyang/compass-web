@@ -1,6 +1,6 @@
 {
   "name": "compass-web",
-  "version": "0.3.1",
+  "version": "0.4.0-alpha.1",
   "bin": "./dist/server.js",
   "scripts": {
     "format": "./compass/node_modules/.bin/prettier --config ./compass/.prettierrc.json --write \"src/**/*.{ts,tsx,js}\" \"*.js\" \"vendors/*.js\" ",
