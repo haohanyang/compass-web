@@ -156,6 +156,19 @@ class InMemoryConnectionManager extends ConnectionManager {
     return Promise.resolve(this.#connections.get(id)?.mongoClient);
   }
 
+  async saveConnectionInfo(connectionInfo) {
+    if (this.#editable) {
+      this.#connections.set(connectionInfo.id, {
+        mongoClient: new MongoClient(
+          connectionInfo.connectionOptions.connectionString
+        ),
+        connectionInfo,
+      });
+    } else {
+      throw new Error('Editing connections is disabled');
+    }
+  }
+
   async deleteConnectionInfo(id) {
     if (this.#editable) {
       const { mongoClient } = this.#connections.get(id) || {};
