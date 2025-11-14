@@ -8,7 +8,6 @@ const { ConnectionString } = require('mongodb-connection-string-url');
 const SOCKET_ERROR_EVENT_LIST = ['error', 'close', 'timeout', 'parseError'];
 
 /**
- *
  * @param {string} message
  * @returns
  */
@@ -51,8 +50,9 @@ function decodeMessageWithTypeByte(message) {
  * @param {import('@fastify/websocket').WebSocket} socket
  * @param {import('fastify').FastifyRequest} req
  */
-function handleMongoWsConnection(fastify, socket, req) {
+function handleWebsocketConnection(fastify, socket, req) {
   const args = fastify.args;
+
   /** @type {ConnectionString[]} */
   const mongoURIs = args.mongoURIs;
 
@@ -193,26 +193,28 @@ function handleMongoWsConnection(fastify, socket, req) {
 
 /**
  * Websocket proxy for MongoDB connections
- * @param {import('fastify').FastifyInstance} instance
+ * @param {import('fastify').FastifyInstance} fastify
+ * @param {import('fastify').FastifyPluginOptions} opts
+ * @param {import('fastify').FastifyPluginCallback} done
  */
-function registerWs(instance) {
-  instance.register(async (fastify) => {
-    fastify.get(
-      '/clusterConnection/:projectId',
-      { websocket: true },
-      (socket, req) => {
-        if (req.params.projectId !== args.projectId) {
-          console.error('Invalid projectId for ws connection');
-          return;
-        }
-        handleMongoWsConnection(instance, socket, req);
+module.exports = function (fastify, opts, done) {
+  const args = fastify.args;
+
+  fastify.get(
+    '/clusterConnection/:projectId',
+    { websocket: true },
+    (socket, req) => {
+      if (req.params.projectId !== args.projectId) {
+        console.error('Invalid projectId for ws connection');
+        return;
       }
-    );
+      handleWebsocketConnection(fastify, socket, req);
+    }
+  );
 
-    fastify.get('/ws-proxy', { websocket: true }, (socket, req) =>
-      handleMongoWsConnection(instance, socket, req)
-    );
-  });
-}
+  fastify.get('/ws-proxy', { websocket: true }, (socket, req) =>
+    handleWebsocketConnection(fastify, socket, req)
+  );
 
-module.exports = { registerWs };
+  done();
+};

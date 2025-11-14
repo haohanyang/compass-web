@@ -4,9 +4,7 @@ const { Eta } = require('eta');
 const NodeCache = require('node-cache');
 const { InMemoryConnectionManager } = require('./connection-manager');
 const { readCliArgs } = require('./cli');
-const { registerWs } = require('./ws');
 const { registerAuth } = require('./auth');
-const { registerRoutes } = require('./routes');
 
 const args = readCliArgs();
 
@@ -52,12 +50,11 @@ fastify.register(require('@fastify/csrf-protection'), {
 // File upload
 fastify.register(require('@fastify/multipart'));
 
-registerWs(fastify);
-
 registerAuth(fastify);
 
 fastify.after(() => {
-  registerRoutes(fastify);
+  fastify.register(require('./ws'));
+  fastify.register(require('./routes'));
 });
 
 module.exports = fastify;
