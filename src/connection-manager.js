@@ -23,7 +23,7 @@ const dbFileName = 'connections.json';
  * Base class
  * @class
  */
-export class ConnectionManager {
+class ConnectionManager {
   constructor() {
     if (new.target === ConnectionManager) {
       throw new TypeError('Cannot instantiate ConnectionManager');
@@ -75,7 +75,7 @@ export class ConnectionManager {
  * @class
  * @extends {ConnectionManager}
  */
-export class InMemoryConnectionManager extends ConnectionManager {
+class InMemoryConnectionManager extends ConnectionManager {
   /**
    * @type {boolean}
    */
@@ -87,6 +87,8 @@ export class InMemoryConnectionManager extends ConnectionManager {
   #connections;
 
   constructor(args) {
+    super();
+
     this.#editable = args.enableEditConnections;
 
     this.#connections = new Map();
@@ -176,7 +178,7 @@ export class InMemoryConnectionManager extends ConnectionManager {
  * @class
  * @extends {ConnectionManager}
  */
-export class EncryptedJsonFileConnectionManager extends ConnectionManager {
+class EncryptedJsonFileConnectionManager extends ConnectionManager {
   /**
    * @type {boolean}
    */
@@ -205,6 +207,8 @@ export class EncryptedJsonFileConnectionManager extends ConnectionManager {
   #masterPassword;
 
   constructor(args) {
+    super();
+
     this.#editable = args.enableEditConnections;
     this.#presetConnections = [];
     this.#mongoClients = new Map();
@@ -396,3 +400,9 @@ async function createClientSafeConnectionString(cs) {
     return cs.href;
   }
 }
+
+module.exports = {
+  ConnectionManager,
+  InMemoryConnectionManager,
+  EncryptedJsonFileConnectionManager,
+};

@@ -18,7 +18,7 @@ const SALT_LENGTH = 64;
 const ITERATIONS = 100000;
 const DIGEST = 'sha256';
 
-export class JSONFileWithEncryption extends JSONFile {
+class JSONFileWithEncryption extends JSONFile {
   /**
    * @type {string}
    */
@@ -179,3 +179,7 @@ export class JSONFileWithEncryption extends JSONFile {
     await super.write({ connections: encryptedConnections });
   }
 }
+
+module.exports = {
+  JSONFileWithEncryption,
+};
