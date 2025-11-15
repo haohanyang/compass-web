@@ -13,7 +13,6 @@ function readCliArgs() {
       type: 'string',
       description:
         'MongoDB connection string, e.g. mongodb://localhost:27017. Multiple connections can be specified by separating them with whitespaces.',
-      demandOption: true,
     })
     .version(pkgJson.version)
     .options('port', {
@@ -97,29 +96,37 @@ function readCliArgs() {
     })
     .parse();
 
-  let mongoURIStrings = args.mongoUri.trim().split(/\s+/);
   /**
    * @type {ConnectionString[]}
    */
   const mongoURIs = [];
 
-  // Validate MongoDB connection strings
-  let errMessage = '';
-  mongoURIStrings.forEach((uri, index) => {
-    try {
-      const mongoUri = new ConnectionString(uri);
+  if (args.mongoUri) {
+    let mongoURIStrings = args.mongoUri.trim().split(/\s+/);
 
-      mongoURIs.push(mongoUri);
-    } catch (err) {
-      errMessage += `Connection string no.${index + 1} is invalid: ${
-        err.message
-      }\n`;
+    // Validate MongoDB connection strings
+    let errMessage = '';
+    mongoURIStrings.forEach((uri, index) => {
+      try {
+        const mongoUri = new ConnectionString(uri);
+
+        mongoURIs.push(mongoUri);
+      } catch (err) {
+        errMessage += `Connection string no.${index + 1} is invalid: ${
+          err.message
+        }\n`;
+      }
+    });
+
+    if (errMessage) {
+      throw new Error(errMessage);
     }
-  });
-
-  if (errMessage) {
-    throw new Error(errMessage);
   }
+
+  if (mongoURIs.length === 0 && !args.enableEditConnections) {
+    console.warn('MongoDB urls are not specified');
+  }
+
 
   // Validate basic auth settings
   let basicAuth = null;
