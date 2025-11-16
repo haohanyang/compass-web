@@ -192,6 +192,7 @@ module.exports = function (fastify, opts, done) {
         reply.status(400).send({
           error: "Connection doesn't exist",
         });
+        return;
       }
 
       reply.raw.setHeader('Content-Type', 'application/octet-stream');
