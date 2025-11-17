@@ -4,19 +4,116 @@
     "jsx": "react",
     "outDir": "dist",
     "paths": {
-      "redux": ["./compass/node_modules/redux"],
-      "react-redux": ["./compass/node_modules/redux"],
-      "lodash": ["./compass/node_modules/@types/lodash"],
-      "react": ["./compass/node_modules/@types/react"],
-      "react-dom": ["./compass/node_modules/@types/react-dom"],
-      "@leafygreen-ui/emotion": [
-        "./compass/node_modules/@leafygreen-ui/emotion"
+      "react": [
+        "./compass/node_modules/@types/react"
       ],
-      "@leafygreen-ui/palette": [
-        "./compass/node_modules/@leafygreen-ui/palette"
+      "react-dom": [
+        "./compass/node_modules/@types/react-dom"
       ],
-      "@leafygreen-ui/tokens": ["./compass/node_modules/@leafygreen-ui/tokens"]
+      "hadron-app-registry": [
+        "./compass/packages/hadron-app-registry"
+      ],
+      "@mongodb-js/compass-connections": [
+        "./compass/packages/compass-connections"
+      ],
+      "@mongodb-js/compass-connections/*": [
+        "./compass/packages/compass-connections/*"
+      ],
+      "@mongodb-js/compass-app-stores": [
+        "./compass/packages/compass-app-stores"
+      ],
+      "@mongodb-js/compass-workspaces": [
+        "./compass/packages/compass-workspaces"
+      ],
+      "@mongodb-js/compass-settings": [
+        "./compass/packages/compass-settings"
+      ],
+      "@mongodb-js/compass-databases-collections": [
+        "./compass/packages/databases-collections"
+      ],
+      "@mongodb-js/compass-collection": [
+        "./compass/packages/compass-collection"
+      ],
+      "@mongodb-js/compass-components": [
+        "./compass/packages/compass-components"
+      ],
+      "@mongodb-js/compass-sidebar": [
+        "./compass/packages/compass-sidebar"
+      ],
+      "@mongodb-js/compass-query-bar": [
+        "./compass/packages/compass-query-bar"
+      ],
+      "@mongodb-js/compass-schema": [
+        "./compass/packages/compass-schema"
+      ],
+      "@mongodb-js/compass-indexes": [
+        "./compass/packages/compass-indexes"
+      ],
+      "@mongodb-js/compass-schema-validation": [
+        "./compass/packages/compass-schema-validation"
+      ],
+      "@mongodb-js/compass-global-writes": [
+        "./compass/packages/compass-global-writes"
+      ],
+      "@mongodb-js/compass-generative-ai": [
+        "./compass/packages/compass-generative-ai"
+      ],
+      "@mongodb-js/compass-generative-ai/*": [
+        "./compass/packages/compass-generative-ai/*"
+      ],
+      "@mongodb-js/compass-explain-plan": [
+        "./compass/packages/compass-explain-plan"
+      ],
+      "@mongodb-js/compass-export-to-language": [
+        "./compass/packages/compass-export-to-language"
+      ],
+      "@mongodb-js/compass-import-export": [
+        "./compass/packages/compass-import-export"
+      ],
+      "@mongodb-js/compass-crud": [
+        "./compass/packages/compass-crud"
+      ],
+      "@mongodb-js/compass-aggregations": [
+        "./compass/packages/compass-aggregations"
+      ],
+      "compass-preferences-model": [
+        "./compass/packages/compass-preferences-model"
+      ],
+      "compass-preferences-model/*": [
+        "./compass/packages/compass-preferences-model/*"
+      ],
+      "@mongodb-js/compass-field-store": [
+        "./compass/packages/compass-field-store"
+      ],
+      "@mongodb-js/atlas-service/*": [
+        "./compass/packages/atlas-service/*"
+      ],
+      "@mongodb-js/compass-logging": [
+        "./compass/packages/compass-logging"
+      ],
+      "@mongodb-js/compass-logging/*": [
+        "./compass/packages/compass-logging/*"
+      ],
+      "@mongodb-js/compass-telemetry": [
+        "./compass/packages/compass-telemetry"
+      ],
+      "@mongodb-js/compass-telemetry/*": [
+        "./compass/packages/compass-telemetry/*"
+      ],
+      "@mongodb-js/compass-welcome": [
+        "./compass/packages/compass-welcome"
+      ],
+      "@mongodb-js/compass-data-modeling": [
+        "./compass/packages/compass-data-modeling"
+      ],
+      "@mongodb-js/compass-data-modeling/*": [
+        "./compass/packages/compass-data-modeling/*"
+      ]
     }
   },
-  "include": ["src/**/*", "compass/packages/**/*", "compass/configs/**/*"]
+  "include": [
+    "src/**/*",
+    "compass/packages/**/*",
+    "compass/configs/**/*"
+  ]
 }

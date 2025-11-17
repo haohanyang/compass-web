@@ -1,18 +1,20 @@
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import { CompassWeb } from './components/compass-web';
 import {
   resetGlobalCSS,
   css,
   Body,
   openToast,
   SpinLoaderWithLabel,
-} from '../compass/packages/compass-components/src';
+} from '@mongodb-js/compass-components';
+import { type AllPreferences } from 'compass-preferences-model';
+
 import { useWorkspaceTabRouter } from '../compass/packages/compass-web/sandbox/sandbox-workspace-tab-router';
-import { type AllPreferences } from '../compass/packages/compass-preferences-model/src';
+import { SandboxConnectionStorageProvider } from '../compass/packages/compass-web/src/connection-storage';
 import { compassWebLogger } from './logger';
 import { CompassWebConnectionStorage } from './connection-storage';
-import { SandboxConnectionStorageProvider } from '../compass/packages/compass-web/src/connection-storage';
+import { CompassWeb } from './components/compass-web';
+
 interface ProjectParams {
   projectId: string;
   orgId: string;

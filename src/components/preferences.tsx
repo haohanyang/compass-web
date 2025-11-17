@@ -1,21 +1,17 @@
 import React, { useRef } from 'react';
-import { createNoopLogger } from '../../compass/packages/compass-logging/src/provider';
+import { createNoopLogger } from '@mongodb-js/compass-logging/provider';
+import { type PreferencesAccess } from 'compass-preferences-model';
+import { type AllPreferences } from 'compass-preferences-model';
+import { getActiveUser } from 'compass-preferences-model';
+import { Preferences } from '../../compass/packages/compass-preferences-model/src/preferences';
 import {
-  Preferences,
-  type PreferencesAccess,
-} from '../../compass/packages/compass-preferences-model/src/preferences';
-import {
+  type StoredPreferences,
   type UserPreferences,
   type UserConfigurablePreferences,
   type PreferenceStateInformation,
   getDefaultsForStoredPreferences,
 } from '../../compass/packages/compass-preferences-model/src/preferences-schema';
 import { type PreferencesStorage } from '../../compass/packages/compass-preferences-model/src/preferences-storage';
-import {
-  type AllPreferences,
-  type StoredPreferences,
-} from '../../compass/packages/compass-preferences-model/src/preferences-schema';
-import { getActiveUser } from '../../compass/packages/compass-preferences-model/src/utils';
 
 const editablePreferences: (keyof UserPreferences)[] = [
   'theme',

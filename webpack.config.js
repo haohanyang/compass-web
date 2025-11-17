@@ -1,9 +1,20 @@
 const path = require('path');
+const { execSync } = require('child_process');
 const { webpack, merge } = require('./compass/configs/webpack-config-compass');
 const compassWebConfig = require('./compass/packages/compass-web/webpack.config');
 const CopyPlugin = require('copy-webpack-plugin');
+const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
 const isProduction = process.env.NODE_ENV === 'production';
+
+/** @type {Array<string>} */
+const monorepoWorkspaces = JSON.parse(
+  execSync('npx lerna list --all --json', {
+    encoding: 'utf-8',
+    stdio: ['ignore', 'pipe', 'ignore'],
+    cwd: path.resolve(__dirname, 'compass'),
+  })
+).map((ws) => ws.name);
 
 function resolveFromCompass(name) {
   return require.resolve(name, {
@@ -49,6 +60,28 @@ module.exports = (env, args) => {
     devtool: isProduction ? false : 'source-map',
     resolve: {
       alias: {
+        '@mongodb-js/compass-data-modeling/web': resolveFromCompass(
+          '@mongodb-js/compass-data-modeling/web'
+        ),
+        'compass-preferences-model/provider': resolveFromCompass(
+          'compass-preferences-model/provider'
+        ),
+        './coordinates-minichart.css': path.resolve(
+          __dirname,
+          'compass/packages/compass-schema/src/components/coordinates-minichart/coordinates-minichart.css'
+        ),
+        'marker-popup.module.less': path.resolve(
+          __dirname,
+          'compass/packages/compass-schema/src/components/coordinates-minichart/marker-popup.module.less'
+        ),
+        'ag-grid-dist.css': path.resolve(
+          __dirname,
+          'compass/packages/compass-crud/src/components/table-view/ag-grid-dist.css'
+        ),
+        'document-table-view.less': path.resolve(
+          __dirname,
+          'compass/packages/compass-crud/src/components/table-view/document-table-view.less'
+        ),
         'core-js/modules': path.resolve(
           __dirname,
           'compass',
@@ -84,6 +117,38 @@ module.exports = (env, args) => {
         '@leafygreen-ui/palette': resolveFromCompass('@leafygreen-ui/palette'),
         '@leafygreen-ui/tokens': resolveFromCompass('@leafygreen-ui/tokens'),
       },
+      plugins: [
+        {
+          apply: (resolver) => {
+            resolver
+              .getHook('resolve')
+              .tapAsync(
+                'ResolveCompassModulesPlugin',
+                (request, context, callback) => {
+                  if (
+                    request.request.startsWith('@mongodb-js/') &&
+                    request.request.endsWith('/provider')
+                  ) {
+                    return callback(null, {
+                      ...request,
+                      path: resolveFromCompass(request.request),
+                    });
+                  }
+
+                  if (monorepoWorkspaces.includes(request.request)) {
+                    console.log('Resolving workspace:', request.request);
+                    return callback(null, {
+                      ...request,
+                      path: resolveFromCompass(request.request),
+                    });
+                  }
+
+                  callback();
+                }
+              );
+          },
+        },
+      ],
     },
     performance: {
       hints: 'warning',
