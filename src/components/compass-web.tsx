@@ -40,8 +40,10 @@ import { CompassGlobalWritesPlugin } from '../../compass/packages/compass-global
 import { CompassGenerativeAIPlugin } from '../../compass/packages/compass-generative-ai/src';
 import ExplainPlanCollectionTabModal from '../../compass/packages/compass-explain-plan/src';
 import ExportToLanguageCollectionTabModal from '../../compass/packages/compass-export-to-language/src';
-import { ExportPlugin } from './export-plugin';
-import { ImportPlugin } from './import-plugin';
+import {
+  ExportPlugin,
+  ImportPlugin,
+} from '../../compass/packages/compass-import-export';
 import {
   CreateNamespacePlugin,
   DropNamespacePlugin,
