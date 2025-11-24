@@ -110,6 +110,8 @@ function readCliArgs() {
       try {
         const mongoUri = new ConnectionString(uri);
 
+        mongoUri.searchParams.set('appName', args.appName);
+
         mongoURIs.push(mongoUri);
       } catch (err) {
         errMessage += `Connection string no.${index + 1} is invalid: ${
@@ -126,7 +128,6 @@ function readCliArgs() {
   if (mongoURIs.length === 0 && !args.enableEditConnections) {
     console.warn('MongoDB urls are not specified');
   }
-
 
   // Validate basic auth settings
   let basicAuth = null;
