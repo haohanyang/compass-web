@@ -42,19 +42,20 @@ docker pull haohanyang/compass-web
 
 ## 🧭 Usage
 
-Start the server with MongoDB connection string(s). The parameters are configured via program arguments or environment variables.
+Start the server with MongoDB connection string(s). The parameters are configured via program arguments or environment variables. You can add `name=<name>` to the connection string parameters so it shows as `<name>`
+in the sidebar.
 
 ```bash
-compass-web --mongo-uri "mongodb://localhost:27017"
+compass-web --mongo-uri "mongodb://localhost:27017/?name=my-favorite-connection"
 
 # or configure via CW_MONGO_URI environment variable
-CW_MONGO_URI="mongodb://localhost:27017" compass-web
+CW_MONGO_URI="mongodb://localhost:27017/?name=my-favorite-connection" compass-web
 
 # or use npx
-npx compass-web --mongo-uri "mongodb://localhost:27017"
+npx compass-web --mongo-uri "mongodb://localhost:27017/?name=my-favorite-connection"
 
 # multiple connection strings
-compass-web --mongo-uri "mongodb://localhost:27017 mongodb+srv://myusername:secrets@default-cluster.mongodb.net/?retryWrites=true&w=majority&appName=default-cluster"
+compass-web --mongo-uri "mongodb://localhost:27017 mongodb+srv://myusername:secrets@default-cluster.mongodb.net/?retryWrites=true&w=majority&appName=default-cluster&name=my-favorite-connection"
 ```
 
 > [!NOTE]
