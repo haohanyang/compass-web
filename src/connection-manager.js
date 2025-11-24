@@ -110,8 +110,7 @@ class InMemoryConnectionManager extends ConnectionManager {
             orgId: args.orgId,
             projectId: args.projectId,
             clusterUniqueId: args.clusterId,
-            clusterName:
-              (uri.hosts && uri.hosts[0]) || uri.hostname || 'unknown-cluster',
+            clusterName: uri.searchParams.get('name') ?? uri.hosts[0],
             clusterType: 'REPLICASET',
             clusterState: 'IDLE',
             metricsId: 'metricsid',
