@@ -9,12 +9,24 @@ const { JSONFile } = require('lowdb/node');
 const algorithm = 'aes-256-gcm';
 
 /**
+ * Derives a 32-byte key from a password using PBKDF2
+ * @param {string} password
+ * @param {Buffer} salt
+ * @returns {Buffer}
+ */
+function deriveKey(password, salt) {
+  return crypto.pbkdf2Sync(password, salt, 100000, 32, 'sha256');
+}
+
+/**
  *
  * @param {string} text
- * @param {crypto.CipherKey} key
+ * @param {string} password
  * @returns {string}
  */
-function encrypt(text, key) {
+function encrypt(text, password) {
+  const salt = crypto.randomBytes(16);
+  const key = deriveKey(password, salt);
   const iv = crypto.randomBytes(12); // 96-bit nonce for GCM
 
   const cipher = crypto.createCipheriv(algorithm, key, iv);
@@ -23,19 +35,24 @@ function encrypt(text, key) {
     cipher.final(),
   ]);
   const tag = cipher.getAuthTag();
-  return `${iv.toString('hex')}:${tag.toString('hex')}:${encrypted.toString(
+  return `${salt.toString('hex')}:${iv.toString('hex')}:${tag.toString(
     'hex'
-  )}`;
+  )}:${encrypted.toString('hex')}`;
 }
 
 /**
  *
  * @param {string} enc
- * @param {crypto.CipherKey} key
+ * @param {string} password
  * @returns
  */
-function decrypt(enc, key) {
-  const [ivHex, tagHex, encryptedHex] = enc.split(':');
+function decrypt(enc, password) {
+  const [saltHex, ivHex, tagHex, encryptedHex] = enc.split(':');
+
+  // Derive the same key using the stored salt
+  const salt = Buffer.from(saltHex, 'hex');
+  const key = deriveKey(password, salt);
+
   const decipher = crypto.createDecipheriv(
     algorithm,
     key,

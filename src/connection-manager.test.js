@@ -7,30 +7,96 @@ const path = require('path');
 const fs = require('fs').promises;
 const assert = require('assert');
 const { ConnectionString } = require('mongodb-connection-string-url');
-const { EncryptedJsonFileConnectionManager } = require('./connection-manager');
+const {
+  InMemoryConnectionManager,
+  FileStorageConnectionManager,
+  CONNECTION_FILE_NAME,
+} = require('./connection-manager');
+const { decrypt } = require('./encryption');
 
-const dbFilePath = path.join(__dirname, '..', 'connections.json');
-const saltFilePath = path.join(__dirname, '..', 'connections.salt');
+const dbFilePath = path.join(__dirname, '..', CONNECTION_FILE_NAME);
 
-describe('Test EncryptedJsonFileConnectionManager', () => {
-  beforeEach(async () => {
-    for (const filePath of [dbFilePath, saltFilePath]) {
-      try {
-        await fs.unlink(filePath);
-      } catch (err) {
-        if (err.code !== 'ENOENT') {
-          throw err;
-        }
+describe('Test InMemoryConnectionManager', function () {
+  const baseArgs = {
+    mongoURIs: [new ConnectionString('mongodb://localhost:27017')],
+  };
+
+  it('Should save new connection', async function () {
+    const connectionManager = new InMemoryConnectionManager(baseArgs);
+    await connectionManager.init();
+
+    const newConnectionInfo = {
+      id: 'new-connection-id',
+      connectionOptions: {
+        connectionString: 'mongodb://user:pass@localhost:27018',
+      },
+    };
+
+    await connectionManager.saveConnectionInfo(newConnectionInfo);
+
+    const allConnections = await connectionManager.getAllConnections(false);
+    assert.strictEqual(allConnections.length, 2);
+    assert.strictEqual(
+      allConnections[1].connectionOptions.connectionString,
+      'mongodb://user:pass@localhost:27018'
+    );
+  });
+
+  it('Should update existing connection', async function () {
+    const connectionManager = new InMemoryConnectionManager(baseArgs);
+    await connectionManager.init();
+
+    const existingConnectionInfo = (
+      await connectionManager.getAllConnections(false)
+    )[0];
+
+    existingConnectionInfo.connectionOptions.connectionString =
+      'mongodb://updatedUser:updatedPass@localhost:27019';
+
+    await connectionManager.saveConnectionInfo(existingConnectionInfo);
+
+    const allConnections = await connectionManager.getAllConnections(false);
+    assert.strictEqual(allConnections.length, 1);
+    assert.strictEqual(
+      allConnections[0].connectionOptions.connectionString,
+      'mongodb://updatedUser:updatedPass@localhost:27019'
+    );
+  });
+
+  it('Should delete existing connection', async function () {
+    const connectionManager = new InMemoryConnectionManager(baseArgs);
+    await connectionManager.init();
+
+    const existingConnectionInfo = (
+      await connectionManager.getAllConnections(false)
+    )[0];
+
+    await connectionManager.deleteConnectionInfo(existingConnectionInfo.id);
+
+    const allConnections = await connectionManager.getAllConnections(false);
+    assert.strictEqual(allConnections.length, 0);
+  });
+});
+
+describe('Test FileStorageConnectionManager', function () {
+  const masterPassword = 'secret-master-password';
+
+  beforeEach(async function () {
+    try {
+      await fs.unlink(dbFilePath);
+    } catch (err) {
+      if (err.code !== 'ENOENT') {
+        throw err;
       }
     }
   });
 
-  it('Should add new connection and encrypt connection string', async () => {
-    const manager = new EncryptedJsonFileConnectionManager({
-      enableEditConnections: true,
+  it('Should save new connection', async function () {
+    const manager = new FileStorageConnectionManager({
       mongoURIs: [new ConnectionString('mongodb://localhost:27017')],
-      masterPassword: 'masterPassword',
+      masterPassword,
     });
+    await manager.init();
 
     await manager.saveConnectionInfo({
       connectionOptions: {
@@ -50,9 +116,62 @@ describe('Test EncryptedJsonFileConnectionManager', () => {
     const dbFileContent = JSON.parse(await fs.readFile(dbFilePath, 'utf-8'));
 
     assert.strictEqual(dbFileContent.connections.length, 1);
-    assert.notStrictEqual(
-      dbFileContent.connections[0].connectionOptions.connectionString,
+    assert.strictEqual(
+      decrypt(
+        dbFileContent.connections[0].connectionOptions.connectionString,
+        masterPassword
+      ),
       'mongodb://user:pass@localhost:27018'
     );
+  });
+
+  it('Should update existing connection', async function () {
+    const manager = new FileStorageConnectionManager({
+      mongoURIs: [new ConnectionString('mongodb://localhost:27017')],
+      masterPassword,
+    });
+    await manager.init();
+
+    const existingConnectionInfo = (await manager.getAllConnections(false))[0];
+
+    existingConnectionInfo.connectionOptions.connectionString =
+      'mongodb://updatedUser:updatedPass@localhost:27019';
+
+    await manager.saveConnectionInfo(existingConnectionInfo);
+
+    const allConnections = await manager.getAllConnections(false);
+    assert.strictEqual(allConnections.length, 1);
+    assert.strictEqual(
+      allConnections[0].connectionOptions.connectionString,
+      'mongodb://updatedUser:updatedPass@localhost:27019'
+    );
+
+    // Verify that the connection string is actually encrypted in the file
+    /** @type {DbData} */
+    const dbFileContent = JSON.parse(await fs.readFile(dbFilePath, 'utf-8'));
+
+    assert.strictEqual(dbFileContent.connections.length, 1);
+    assert.strictEqual(
+      decrypt(
+        dbFileContent.connections[0].connectionOptions.connectionString,
+        masterPassword
+      ),
+      'mongodb://updatedUser:updatedPass@localhost:27019'
+    );
+  });
+
+  it('Should delete existing connection', async function () {
+    const manager = new FileStorageConnectionManager({
+      mongoURIs: [new ConnectionString('mongodb://localhost:27017')],
+      masterPassword,
+    });
+    await manager.init();
+
+    const existingConnectionInfo = (await manager.getAllConnections(false))[0];
+
+    await manager.deleteConnectionInfo(existingConnectionInfo.id);
+
+    const allConnections = await manager.getAllConnections(false);
+    assert.strictEqual(allConnections.length, 0);
   });
 });

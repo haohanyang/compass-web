@@ -5,14 +5,17 @@
  * @typedef {{connections: ConnectionInfo[]}} DbData
  * @typedef {import('lowdb').Low<DbData>} LowT
  */
-
+const path = require('path');
 const crypto = require('crypto');
-const { MongoClient } = require('mongodb');
+const { Low } = require('lowdb');
 const {
   resolveSRVRecord,
   parseOptions,
 } = require('mongodb/lib/connection_string');
 const { ConnectionString } = require('mongodb-connection-string-url');
+const { JSONFileWithEncryption } = require('./encryption');
+
+const CONNECTION_FILE_NAME = 'connections.json';
 
 /**
  *
@@ -33,7 +36,7 @@ function createConnectionManager(args) {
  */
 class BaseConnectionManager {
   /**
-   * @type {Map<string, {mongoClient: MongoClient, connectionInfo: ConnectionInfo}>}
+   * @type {Map<string, ConnectionInfo>}
    */
   connections;
 
@@ -47,25 +50,22 @@ class BaseConnectionManager {
       const id = crypto.randomBytes(8).toString('hex');
 
       this.connections.set(id, {
-        mongoClient: new MongoClient(uri.href),
-        connectionInfo: {
-          id: id,
-          connectionOptions: {
-            connectionString: uri.href,
-          },
-          atlasMetadata: {
-            orgId: args.orgId,
-            projectId: args.projectId,
-            clusterUniqueId: args.clusterId,
-            clusterName: uri.searchParams.get('name') ?? uri.hosts[0],
-            clusterType: 'REPLICASET',
-            clusterState: 'IDLE',
-            metricsId: 'metricsid',
-            metricsType: 'replicaSet',
-            supports: {
-              globalWrites: false,
-              rollingIndexes: false,
-            },
+        id: id,
+        connectionOptions: {
+          connectionString: uri.href,
+        },
+        atlasMetadata: {
+          orgId: args.orgId,
+          projectId: args.projectId,
+          clusterUniqueId: args.clusterId,
+          clusterName: uri.searchParams.get('name') ?? uri.hosts[0],
+          clusterType: 'REPLICASET',
+          clusterState: 'IDLE',
+          metricsId: 'metricsid',
+          metricsType: 'replicaSet',
+          supports: {
+            globalWrites: false,
+            rollingIndexes: false,
           },
         },
       });
@@ -80,7 +80,7 @@ class BaseConnectionManager {
     /** @type {ConnectionInfo} */
     const connections = [];
 
-    for (const { connectionInfo } of this.connections.values()) {
+    for (const connectionInfo of this.connections.values()) {
       if (resolveSrv) {
         const clientConnectionString = await createClientSafeConnectionString(
           new ConnectionString(
@@ -102,13 +102,8 @@ class BaseConnectionManager {
     return connections;
   }
 
-  /**
-   *
-   * @param {string} id
-   * @returns {Promise<MongoClient?>}
-   */
-  async getMongoClientById(id) {
-    return Promise.resolve(this.connections.get(id)?.mongoClient);
+  async init() {
+    // no-op
   }
 
   /**
@@ -127,13 +122,9 @@ class BaseConnectionManager {
     throw new Error('Cannot delete connection');
   }
 
-  /**
-   * @returns {Promise<void>}
-   */
-  async close() {
-    await Promise.all(
-      this.connections.values().map(({ mongoClient }) => mongoClient.close())
-    );
+  getConnectionStringById(id) {
+    const connectionInfo = this.connections.get(id);
+    return connectionInfo?.connectionOptions.connectionString;
   }
 }
 
@@ -147,47 +138,95 @@ class InMemoryConnectionManager extends BaseConnectionManager {
    * @return {Promise<void>}
    */
   async saveConnectionInfo(connectionInfo) {
-    this.connections.set(connectionInfo.id, {
-      mongoClient: new MongoClient(
-        connectionInfo.connectionOptions.connectionString
-      ),
-      connectionInfo,
-    });
+    this.connections.set(connectionInfo.id, connectionInfo);
   }
+
   /**
    * @param {string} id
    * @return {Promise<void>}
    */
   async deleteConnectionInfo(id) {
-    const { mongoClient } = this.connections.get(id) || {};
-    await mongoClient?.close();
-
     this.connections.delete(id);
   }
 }
 
 class FileStorageConnectionManager extends BaseConnectionManager {
   /**
+   * Master password for encryption
    * @type {string}
    */
-  #encryptionKey;
+  #masterPassword;
+
+  /**
+   * Storage of editable connections
+   * @type {LowT?}
+   */
+  #db;
 
   constructor(args) {
     super(args);
 
-    this.#encryptionKey = args.encryptionKey;
+    if (!args.masterPassword) {
+      throw new Error(
+        'Master password is required for encrypting connection strings'
+      );
+    }
+
+    this.#masterPassword = args.masterPassword;
   }
+
+  async init() {
+    if (this.#db) {
+      return;
+    }
+
+    const storePath = path.resolve(__dirname, '..', CONNECTION_FILE_NAME);
+
+    this.#db = new Low(
+      new JSONFileWithEncryption(storePath, this.#masterPassword),
+      {
+        connections: [],
+      }
+    );
+
+    await this.#db.read();
+  }
+
   /**
    * @param {ConnectionInfo} connectionInfo
-   * @return {Promise<void>}
    */
   async saveConnectionInfo(connectionInfo) {
-    this.connections.set(connectionInfo.id, {
-      mongoClient: new MongoClient(
-        connectionInfo.connectionOptions.connectionString
-      ),
-      connectionInfo,
+    if (!this.#db) {
+      throw new Error('Connection not initialized');
+    }
+
+    await this.#db.update(({ connections }) => {
+      const existingIndex = connections.findIndex(
+        (c) => c.id === connectionInfo.id
+      );
+      if (existingIndex === -1) {
+        connections.push(connectionInfo);
+      } else {
+        connections[existingIndex] = connectionInfo;
+      }
     });
+
+    this.connections.set(connectionInfo.id, connectionInfo);
+  }
+
+  /**
+   * @param {string} id
+   */
+  async deleteConnectionInfo(id) {
+    if (!this.#db) {
+      throw new Error('Connection not initialized');
+    }
+
+    this.#db.data.connections = this.#db.data.connections.filter(
+      (c) => c.id !== id
+    );
+    await this.#db.write();
+    this.connections.delete(id);
   }
 }
 
@@ -224,5 +263,7 @@ async function createClientSafeConnectionString(cs) {
 module.exports = {
   BaseConnectionManager,
   InMemoryConnectionManager,
+  FileStorageConnectionManager,
   createConnectionManager,
+  CONNECTION_FILE_NAME,
 };

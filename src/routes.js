@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { Writable } = require('stream');
+const { MongoClient } = require('mongodb');
 const { generateQuery, generateAggregation } = require('./gen-ai');
 const DataService = require('./data-service');
 const {
@@ -37,7 +38,7 @@ module.exports = function (fastify, opts, done) {
   /** * @type {import('node-cache')}*/
   const exportIds = fastify.exportIds;
 
-  /** @type {import('./connection-manager').ConnectionManager>} */
+  /** @type {import('./connection-manager').BaseConnectionManager>} */
   const connectionManager = fastify.connectionManager;
 
   const settings = {
@@ -184,16 +185,17 @@ module.exports = function (fastify, opts, done) {
     const exportOptions = exportIds.get(exportId);
 
     if (exportOptions) {
-      const mongoClient = await connectionManager.getMongoClientById(
+      const connectionString = connectionManager.getConnectionStringById(
         exportOptions.connectionId
       );
-
-      if (!mongoClient) {
+      if (!connectionString) {
         reply.status(400).send({
           error: "Connection doesn't exist",
         });
         return;
       }
+
+      const mongoClient = new MongoClient(connectionString);
 
       reply.raw.setHeader('Content-Type', 'application/octet-stream');
 
@@ -254,6 +256,7 @@ module.exports = function (fastify, opts, done) {
         console.error(`Export ${exportId} failed`, err);
       } finally {
         reply.raw.end();
+        mongoClient.close();
       }
     } else {
       reply.status(404).send({
@@ -264,14 +267,14 @@ module.exports = function (fastify, opts, done) {
 
   fastify.post('/gather-fields', async (request, reply) => {
     const connectionId = request.body.connectionId;
+    const connectionString =
+      connectionManager.getConnectionStringById(connectionId);
 
-    const mongoClient = await connectionManager.getMongoClientById(
-      connectionId
-    );
-
-    if (!mongoClient) {
+    if (!connectionString) {
       reply.status(400).send({ error: 'connection id not found' });
     }
+
+    const mongoClient = new MongoClient(connectionString);
 
     const res = await gatherFieldsFromQuery({
       ns: request.body.ns,
@@ -279,6 +282,9 @@ module.exports = function (fastify, opts, done) {
       query: request.body.query,
       sampleSize: request.body.sampleSize,
     });
+
+    // TODO: Error handling
+    await mongoClient.close();
 
     reply.send({
       docsProcessed: res.docsProcessed,
@@ -321,12 +327,15 @@ module.exports = function (fastify, opts, done) {
 
       const body = JSON.parse(rawJson);
 
-      const mongoClient = await connectionManager.getMongoClientById(
+      const connectionString = connectionManager.getConnectionStringById(
         body.connectionId
       );
-      if (!mongoClient) {
+
+      if (!connectionString) {
         reply.status(400).send({ error: 'connection id not found' });
       }
+
+      const mongoClient = new MongoClient(connectionString);
 
       try {
         const res = await importJSON({
@@ -339,6 +348,8 @@ module.exports = function (fastify, opts, done) {
       } catch (err) {
         console.error(err);
         reply.status(502).send({ error: err.message ?? 'Unknown error' });
+      } finally {
+        await mongoClient.close();
       }
     }
   );
@@ -360,12 +371,15 @@ module.exports = function (fastify, opts, done) {
 
       const body = JSON.parse(rawJson);
 
-      const mongoClient = await connectionManager.getMongoClientById(
+      const connectionString = connectionManager.getConnectionStringById(
         body.connectionId
       );
-      if (!mongoClient) {
+
+      if (!connectionString) {
         reply.status(400).send({ error: 'connection id not found' });
       }
+
+      const mongoClient = new MongoClient(connectionString);
 
       try {
         const res = await importCSV({
@@ -378,6 +392,8 @@ module.exports = function (fastify, opts, done) {
       } catch (err) {
         console.error(err);
         reply.status(502).send({ error: err.message ?? 'Unknown error' });
+      } finally {
+        await mongoClient.close();
       }
     }
   );

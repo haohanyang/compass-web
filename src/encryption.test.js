@@ -11,7 +11,6 @@ const { Low } = require('lowdb');
 const { JSONFileWithEncryption, decrypt, encrypt } = require('./encryption');
 
 const dbFilePath = path.join(__dirname, '..', 'test-connections.json');
-const saltFilePath = path.join(__dirname, '..', 'test-encryption.salt');
 
 describe('Encryption and decryption', function () {
   it('Should correctly encrypt and decrypt text', function () {
@@ -29,13 +28,11 @@ describe('JSONFileWithEncryption', function () {
   const key = crypto.randomBytes(32);
 
   beforeEach(async () => {
-    for (const filePath of [dbFilePath]) {
-      try {
-        await fs.unlink(filePath);
-      } catch (err) {
-        if (err.code !== 'ENOENT') {
-          throw err;
-        }
+    try {
+      await fs.unlink(dbFilePath);
+    } catch (err) {
+      if (err.code !== 'ENOENT') {
+        throw err;
       }
     }
   });
@@ -71,6 +68,35 @@ describe('JSONFileWithEncryption', function () {
         encryptedData.connections[0].connectionOptions.connectionString,
         key
       ),
+      connectionString
+    );
+  });
+
+  it('Should correctly decrypt connections', async () => {
+    const connectionString = 'mongodb://username:password@localhost:27017';
+
+    // create a json file
+    const connectionData = {
+      connections: [
+        {
+          connectionOptions: {
+            connectionString: encrypt(connectionString, key),
+          },
+        },
+      ],
+    };
+
+    await fs.writeFile(dbFilePath, JSON.stringify(connectionData), 'utf8');
+
+    /** @type {LowT} */
+    const db = new Low(new JSONFileWithEncryption(dbFilePath, key), {
+      connections: [],
+    });
+    await db.read();
+
+    assert.strictEqual(db.data.connections.length, 1);
+    assert.strictEqual(
+      db.data.connections[0].connectionOptions.connectionString,
       connectionString
     );
   });
