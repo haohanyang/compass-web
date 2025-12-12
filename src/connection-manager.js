@@ -166,6 +166,31 @@ class InMemoryConnectionManager extends BaseConnectionManager {
   }
 }
 
+class FileStorageConnectionManager extends BaseConnectionManager {
+  /**
+   * @type {string}
+   */
+  #encryptionKey;
+
+  constructor(args) {
+    super(args);
+
+    this.#encryptionKey = args.encryptionKey;
+  }
+  /**
+   * @param {ConnectionInfo} connectionInfo
+   * @return {Promise<void>}
+   */
+  async saveConnectionInfo(connectionInfo) {
+    this.connections.set(connectionInfo.id, {
+      mongoClient: new MongoClient(
+        connectionInfo.connectionOptions.connectionString
+      ),
+      connectionInfo,
+    });
+  }
+}
+
 /**
  * Create a client-safe connection string that avoids problematic SRV parsing in the frontend.
  * The compass frontend has code paths that assume hosts array exists when parsing connection strings.
