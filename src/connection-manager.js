@@ -18,19 +18,6 @@ const { JSONFileWithEncryption } = require('./encryption');
 const CONNECTION_FILE_NAME = 'connections.json';
 
 /**
- *
- * @param {object} args
- * @returns {BaseConnectionManager}
- */
-function createConnectionManager(args) {
-  if (!args.enableEditConnections) {
-    return new BaseConnectionManager(args);
-  } else {
-    return new InMemoryConnectionManager(args);
-  }
-}
-
-/**
  * Base class
  * @class
  */
@@ -166,12 +153,6 @@ class FileStorageConnectionManager extends BaseConnectionManager {
   constructor(args) {
     super(args);
 
-    if (!args.masterPassword) {
-      throw new Error(
-        'Master password is required for encrypting connection strings'
-      );
-    }
-
     this.#masterPassword = args.masterPassword;
   }
 
@@ -264,6 +245,5 @@ module.exports = {
   BaseConnectionManager,
   InMemoryConnectionManager,
   FileStorageConnectionManager,
-  createConnectionManager,
   CONNECTION_FILE_NAME,
 };

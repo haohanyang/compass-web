@@ -2,13 +2,10 @@
 
 const { Eta } = require('eta');
 const NodeCache = require('node-cache');
-const { createConnectionManager } = require('./connection-manager');
 const { readCliArgs } = require('./cli');
 const { registerAuth } = require('./auth');
 
 const args = readCliArgs();
-
-const connectionManager = createConnectionManager(args);
 
 const exportIds = new NodeCache({ stdTTL: 3600 });
 
@@ -20,7 +17,7 @@ fastify.decorate('args', args);
 
 fastify.decorate('exportIds', exportIds);
 
-fastify.decorate('connectionManager', connectionManager);
+fastify.decorate('connectionManager', args.connectionManager);
 
 fastify.register(require('@fastify/static'), {
   root: __dirname,

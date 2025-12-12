@@ -3,6 +3,12 @@
 const yargs = require('yargs');
 const { hideBin } = require('yargs/helpers');
 const { ConnectionString } = require('mongodb-connection-string-url');
+const {
+  CONNECTION_FILE_NAME,
+  BaseConnectionManager,
+  InMemoryConnectionManager,
+  FileStorageConnectionManager,
+} = require('./connection-manager');
 const pkgJson = require('../package.json');
 const { AGGREGATION_SYSTEM_PROMPT, QUERY_SYSTEM_PROMPT } = require('./gen-ai');
 
@@ -86,13 +92,19 @@ function readCliArgs() {
     })
     .options('enable-edit-connections', {
       type: 'boolean',
-      description: 'Allow user to edit connections in the UI',
+      description: `Allow user to edit connections in the UI. Unless in-memory-connections is set, connection strings will be stored encrypted on ${CONNECTION_FILE_NAME}.`,
+      default: false,
+    })
+    .option('in-memory-storage', {
+      type: 'boolean',
+      description:
+        'Store connection information in memory only. Connections will not persist across restarts.',
       default: false,
     })
     .options('master-password', {
       type: 'string',
-      description: 'Master password to encrypt/decrypt connection credentials',
-      default: 'default-master-password',
+      description:
+        'Master password to encrypt/decrypt connection strings. Required when --enable-edit-connections is set and --in-memory-connections is not set.',
     })
     .parse();
 
@@ -149,7 +161,25 @@ function readCliArgs() {
     };
   }
 
-  return { ...args, mongoURIs, basicAuth };
+  // Check connection manager settings
+  let connectionManager;
+  if (args.enableEditConnections) {
+    if (args.inMemoryStorage) {
+      connectionManager = new InMemoryConnectionManager(args);
+    } else {
+      if (!args.masterPassword) {
+        throw new Error(
+          'Master password is required for encrypting connection strings'
+        );
+      }
+
+      connectionManager = new FileStorageConnectionManager(args);
+    }
+  } else {
+    connectionManager = new BaseConnectionManager(args);
+  }
+
+  return { ...args, mongoURIs, basicAuth, connectionManager };
 }
 
 module.exports = { readCliArgs };
