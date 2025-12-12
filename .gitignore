@@ -136,7 +136,4 @@ out/
 compass-import-export/
 
 run.sh
-connections.json
-connections.salt
-test-encryption.json
-test-encryption.salt
+*connections.json
