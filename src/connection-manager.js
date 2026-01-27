@@ -171,6 +171,10 @@ class FileStorageConnectionManager extends BaseConnectionManager {
     );
 
     await this.#db.read();
+
+    for (const connectionInfo of this.#db.data.connections) {
+      this.connections.set(connectionInfo.id, connectionInfo);
+    }
   }
 
   /**
