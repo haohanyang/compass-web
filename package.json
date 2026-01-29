@@ -3,7 +3,8 @@
   "version": "0.4.0-beta.1",
   "bin": "./dist/server.js",
   "scripts": {
-    "format": "./compass/node_modules/.bin/prettier --config ./compass/.prettierrc.json --write \"src/**/*.{ts,tsx,js}\" \"*.js\" \"vendors/*.js\" ",
+    "format": "./compass/node_modules/.bin/prettier --write src/**/*.{ts,tsx,js} *.js vendors/*.js",
+    "format:win": ".\\compass\\node_modules\\.bin\\prettier --write .\\src\\**\\*.{ts,tsx,js} .\\*.js .\\vendors\\*.js",
     "prebuild": "rm -rf dist",
     "build-client": "ELECTRON_OVERRIDE_DIST_PATH=/dev/null ELECTRON_SKIP_BINARY_DOWNLOAD=1 compass/node_modules/.bin/webpack",
     "bc": "npm run build-client",
@@ -59,7 +60,11 @@
     "mocha": "^11.7.5",
     "rollup": "^4.52.5"
   },
-  "pnpm": {},
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "interruptor"
+    ]
+  },
   "keywords": [
     "mongodb",
     "compass",

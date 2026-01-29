@@ -91,20 +91,26 @@ class JSONFileWithEncryption extends JSONFile {
       (await super.read()) || {};
 
     const decryptedConnections = encryptedConnections.map((conn) => {
-      const decryptedConnectionString = decrypt(
-        conn.connectionOptions.connectionString,
-        this.#encryptionKey
-      );
-      return {
-        ...conn,
-        connectionOptions: {
-          ...conn.connectionOptions,
-          connectionString: decryptedConnectionString,
-        },
-      };
+      try {
+        const decryptedConnectionString = decrypt(
+          conn.connectionOptions.connectionString,
+          this.#encryptionKey
+        );
+        return {
+          ...conn,
+          connectionOptions: {
+            ...conn.connectionOptions,
+            connectionString: decryptedConnectionString,
+          },
+        };
+      } catch (e) {
+        // Ignore if decryption fails
+        console.error(`Failed to decrypt connection ${conn.id}:`, e);
+        return null;
+      }
     });
 
-    return { connections: decryptedConnections };
+    return { connections: decryptedConnections.filter((conn) => !!conn) };
   }
 
   /**
