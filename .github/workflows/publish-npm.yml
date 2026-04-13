@@ -43,7 +43,7 @@ jobs:
       - name: Publish to npmjs
         env:
           NPM_CONFIG_PROVENANCE: true
-        run: pnpm publish --tag ${{ github.event.inputs.tag }} --no-git-checks --access public
+        run: npm publish --tag ${{ github.event.inputs.tag }} --access public
       - name: Create and push git tag
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
