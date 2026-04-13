@@ -42,7 +42,6 @@ jobs:
           pnpm run build-server:production
       - name: Publish to npmjs
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
         run: pnpm publish --tag ${{ github.event.inputs.tag }} --no-git-checks --access public
       - name: Create and push git tag
