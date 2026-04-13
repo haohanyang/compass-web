@@ -16,6 +16,7 @@ import {
 } from '../compass/packages/compass-import-export/src/components/export-toast';
 import type { ExportJSONFormat } from '../compass/packages/compass-import-export/src/export/export-json';
 import type { ExportThunkAction } from '../compass/packages/compass-import-export/src/stores/export-store';
+import { getMetaData, getAPIRoute } from './shared';
 
 type SelectFieldsToExportAction = {
   type: ExportActionTypes.SelectFieldsToExport;
@@ -36,6 +37,8 @@ type FetchFieldsToExportSuccessAction = {
   fieldsToExport: FieldsToExport;
   aborted?: boolean;
 };
+
+const csrfToken = getMetaData('csrf-token') || '';
 
 export const runExport = ({
   fileType,
@@ -146,19 +149,16 @@ export const runExport = ({
       let response;
       if (aggregation) {
         if (fileType === 'csv') {
-          response = await fetch('/export-csv', {
+          response = await fetch(getAPIRoute('export-csv'), {
             method: 'POST',
             body: JSON.stringify({ ...baseExportOptions, aggregation }),
             headers: {
               'Content-Type': 'application/json',
-              // @ts-ignore
-              'csrf-token':
-                document.querySelector('meta[name="csrf-token"]')?.content ??
-                '',
+              'csrf-token': csrfToken,
             },
           });
         } else {
-          response = await fetch('/export-json', {
+          response = await fetch(getAPIRoute('export-json'), {
             method: 'POST',
             body: JSON.stringify({
               ...baseExportOptions,
@@ -167,28 +167,22 @@ export const runExport = ({
             }),
             headers: {
               'Content-Type': 'application/json',
-              // @ts-ignore
-              'csrf-token':
-                document.querySelector('meta[name="csrf-token"]')?.content ??
-                '',
+              'csrf-token': csrfToken,
             },
           });
         }
       } else {
         if (fileType === 'csv') {
-          response = await fetch('/export-csv', {
+          response = await fetch(getAPIRoute('export-csv'), {
             method: 'POST',
             body: JSON.stringify({ ...baseExportOptions, query }),
             headers: {
               'Content-Type': 'application/json',
-              // @ts-ignore
-              'csrf-token':
-                document.querySelector('meta[name="csrf-token"]')?.content ??
-                '',
+              'csrf-token': csrfToken,
             },
           });
         } else {
-          response = await fetch('/export-json', {
+          response = await fetch(getAPIRoute('export-json'), {
             method: 'POST',
             body: JSON.stringify({
               ...baseExportOptions,
@@ -197,10 +191,7 @@ export const runExport = ({
             }),
             headers: {
               'Content-Type': 'application/json',
-              // @ts-ignore
-              'csrf-token':
-                document.querySelector('meta[name="csrf-token"]')?.content ??
-                '',
+              'csrf-token': csrfToken,
             },
           });
         }
@@ -208,7 +199,7 @@ export const runExport = ({
 
       const exportId = await response.text();
 
-      window.open(`/export/${exportId}`, '_blank');
+      window.open(getAPIRoute(`export/${exportId}`), '_blank');
 
       // log.info(mongoLogId(1_001_000_186), 'Export', 'Finished export', {
       //     namespace,
@@ -323,7 +314,7 @@ export const selectFieldsToExport = (): ExportThunkAction<
         throw new Error('ConnectionId not provided');
       }
 
-      const res = await fetch('/gather-fields', {
+      const res = await fetch(getAPIRoute('gather-fields'), {
         method: 'POST',
         body: JSON.stringify({
           connectionId: connectionId,
@@ -333,9 +324,7 @@ export const selectFieldsToExport = (): ExportThunkAction<
         }),
         headers: {
           'Content-Type': 'application/json',
-          // @ts-ignore
-          'csrf-token':
-            document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+          'csrf-token': csrfToken,
         },
       });
 

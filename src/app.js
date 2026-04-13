@@ -53,8 +53,27 @@ fastify.register(require('@fastify/multipart'));
 registerAuth(fastify);
 
 fastify.after(() => {
-  fastify.register(require('./ws'));
-  fastify.register(require('./routes'));
+  const baseRoute = args.baseRoute;
+
+  fastify.register(require('./ws'), {
+    prefix: baseRoute ? '/' + baseRoute : undefined,
+  });
+  fastify.register(require('./routes'), {
+    prefix: baseRoute ? `/${baseRoute}/api` : '/api',
+  });
+
+  fastify.setNotFoundHandler((request, reply) => {
+    if (baseRoute && !request.url.startsWith('/' + baseRoute)) {
+      reply.status(404).send({ error: 'Not found' });
+      return;
+    }
+    const csrfToken = reply.generateCsrf();
+    reply.view('index.eta', {
+      csrfToken,
+      appName: args.appName,
+      baseRoute: baseRoute,
+    });
+  });
 });
 
 module.exports = fastify;

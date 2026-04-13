@@ -197,20 +197,10 @@ function handleWebsocketConnection(fastify, socket, req) {
  * @param {import('fastify').FastifyPluginOptions} opts
  * @param {import('fastify').FastifyPluginCallback} done
  */
-module.exports = function (fastify, opts, done) {
-  const args = fastify.args;
-
-  fastify.get(
-    '/clusterConnection/:projectId',
-    { websocket: true },
-    (socket, req) => {
-      if (req.params.projectId !== args.projectId) {
-        console.error('Invalid projectId for ws connection');
-        return;
-      }
-      handleWebsocketConnection(fastify, socket, req);
-    }
-  );
+module.exports = function (fastify, _opts, done) {
+  fastify.get('/ws', { websocket: true }, (socket, req) => {
+    handleWebsocketConnection(fastify, socket, req);
+  });
 
   fastify.get('/ws-proxy', { websocket: true }, (socket, req) =>
     handleWebsocketConnection(fastify, socket, req)
