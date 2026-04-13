@@ -8,10 +8,10 @@ on:
         type: choice
         required: true
         options:
-        - latest
-        - alpha
-        - beta
-        - rc
+          - latest
+          - alpha
+          - beta
+          - rc
 
 jobs:
   publish-npm:
@@ -42,8 +42,9 @@ jobs:
           pnpm run build-server:production
       - name: Publish to npmjs
         env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
-        run: npm publish --tag ${{ github.event.inputs.tag }} --access public
+        run: pnpm publish --tag ${{ github.event.inputs.tag }} --access public
       - name: Create and push git tag
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
