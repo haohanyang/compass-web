@@ -2,7 +2,10 @@ import type {
   ConnectionStorage,
   ConnectionInfo,
 } from '../compass/packages/connection-storage/src/provider';
+import { getMetaData, getAPIRoute } from './shared';
 import { openToast } from '../compass/packages/compass-components/src';
+
+const baseRoute = getMetaData('base-route') || '';
 
 export class CompassWebConnectionStorage implements ConnectionStorage {
   private readonly _defaultHeaders: Record<string, string> = {
@@ -10,20 +13,16 @@ export class CompassWebConnectionStorage implements ConnectionStorage {
   };
 
   constructor(private readonly _projectId: string) {
-    const csrfElement: HTMLMetaElement | null = document.querySelector(
-      'meta[name="csrf-token"]'
-    );
+    const csrfToken = getMetaData('csrf-token');
 
-    if (csrfElement?.content) {
-      this._defaultHeaders['csrf-token'] = csrfElement.content;
+    if (csrfToken) {
+      this._defaultHeaders['csrf-token'] = csrfToken;
     }
   }
 
   async loadAll(): Promise<ConnectionInfo[]> {
     try {
-      const resp = await fetch(
-        `/explorer/v1/groups/${this._projectId}/clusters/connectionInfo`
-      );
+      const resp = await fetch(getAPIRoute('connection-info'));
 
       if (!resp.ok) {
         const error = (await resp.json()).error || 'Unknown error';
@@ -36,7 +35,7 @@ export class CompassWebConnectionStorage implements ConnectionStorage {
         connectionOptions: {
           ...conn.connectionOptions,
           lookup: () => ({
-            wsURL: `/clusterConnection/${this._projectId}`,
+            wsURL: baseRoute ? `/${baseRoute}/ws` : '/ws',
           }),
         },
       }));
@@ -61,14 +60,11 @@ export class CompassWebConnectionStorage implements ConnectionStorage {
     connectionInfo: ConnectionInfo;
   }): Promise<void> {
     try {
-      const resp = await fetch(
-        `/explorer/v1/groups/${this._projectId}/clusters/connectionInfo`,
-        {
-          method: 'POST',
-          headers: this._defaultHeaders,
-          body: JSON.stringify(connectionInfo),
-        }
-      );
+      const resp = await fetch(getAPIRoute('connection-info'), {
+        method: 'POST',
+        headers: this._defaultHeaders,
+        body: JSON.stringify(connectionInfo),
+      });
 
       if (!resp.ok) {
         const error = (await resp.json()).error || 'Unknown error';
@@ -85,12 +81,9 @@ export class CompassWebConnectionStorage implements ConnectionStorage {
 
   async delete({ id }: { id: string }): Promise<void> {
     try {
-      const resp = await fetch(
-        `/explorer/v1/groups/${this._projectId}/clusters/connectionInfo/${id}`,
-        {
-          method: 'DELETE',
-        }
-      );
+      const resp = await fetch(getAPIRoute(`connection-info/${id}`), {
+        method: 'DELETE',
+      });
 
       if (!resp.ok) {
         const error = (await resp.json()).error || 'Unknown error';

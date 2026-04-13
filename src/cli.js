@@ -84,6 +84,11 @@ function readCliArgs() {
       description: 'Enable upload sample documents to GenAI service.',
       default: false,
     })
+    .option('base-route', {
+      type: 'string',
+      description: 'Base route prefix for all application routes, e.g. /app',
+      default: '',
+    })
     .options('enable-edit-connections', {
       type: 'boolean',
       description: 'Allow user to edit connections in the UI',
@@ -149,7 +154,9 @@ function readCliArgs() {
     };
   }
 
-  return { ...args, mongoURIs, basicAuth };
+  const baseRoute = args.baseRoute.trim();
+  console.log('Base Route', baseRoute);
+  return { ...args, mongoURIs, basicAuth, baseRoute };
 }
 
 module.exports = { readCliArgs };

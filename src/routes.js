@@ -60,87 +60,67 @@ module.exports = function (fastify, opts, done) {
     });
   });
 
-  fastify.get('/projectId', (request, reply) => {
-    reply.type('text/plain').send(args.projectId);
-  });
+  fastify.get('/settings', (request, reply) => {
+    const preferences = settings;
 
-  fastify.get('/cloud-mongodb-com/v2/:projectId/params', (request, reply) => {
-    if (request.params.projectId == args.projectId) {
-      const preferences = settings;
-
-      reply.send({
-        orgId: args.orgId,
-        projectId: args.projectId,
-        appName: args.appName,
-        preferences: {
-          ...preferences,
-          enableGenAIFeaturesAtlasOrg: preferences.enableGenAIFeatures,
-          enableGenAIFeaturesAtlasProject: preferences.enableGenAIFeatures,
-          enableGenAISampleDocumentPassing:
-            preferences.enableGenAISampleDocumentPassing,
-          enableGenAISampleDocumentPassingOnAtlasProject:
-            preferences.enableGenAISampleDocumentPassing,
-          optInDataExplorerGenAIFeatures:
-            preferences.optInDataExplorerGenAIFeatures ?? false,
-          cloudFeatureRolloutAccess: {
-            GEN_AI_COMPASS: preferences.enableGenAIFeatures,
-          },
+    reply.send({
+      orgId: args.orgId,
+      projectId: args.projectId,
+      appName: args.appName,
+      preferences: {
+        ...preferences,
+        enableGenAIFeaturesAtlasOrg: preferences.enableGenAIFeatures,
+        enableGenAIFeaturesAtlasProject: preferences.enableGenAIFeatures,
+        enableGenAISampleDocumentPassing:
+          preferences.enableGenAISampleDocumentPassing,
+        enableGenAISampleDocumentPassingOnAtlasProject:
+          preferences.enableGenAISampleDocumentPassing,
+        optInDataExplorerGenAIFeatures:
+          preferences.optInDataExplorerGenAIFeatures ?? false,
+        cloudFeatureRolloutAccess: {
+          GEN_AI_COMPASS: preferences.enableGenAIFeatures,
         },
-      });
-    } else {
-      reply.status(404).send({
-        message: 'Project not found',
-      });
-    }
+        wsBaseUrl: args.baseRoute ? '/' + args.baseRoute : '',
+        cloudBaseUrl: args.baseRoute ? `/${args.baseRoute}/api` : '/api',
+        atlasApiBaseUrl: args.baseRoute ? `/${args.baseRoute}/api` : '/api',
+        authPortalUrl: '',
+      },
+    });
   });
 
-  fastify.get(
-    '/explorer/v1/groups/:projectId/clusters/connectionInfo',
-    async (request, reply) => {
-      const connections = await connectionManager.getAllConnections();
-      reply.send(connections);
-    }
-  );
+  fastify.get('/connection-info', async (_request, reply) => {
+    const connections = await connectionManager.getAllConnections();
+    reply.send(connections);
+  });
 
   // Save connection
-  fastify.post(
-    '/explorer/v1/groups/:projectId/clusters/connectionInfo',
-    async (request, reply) => {
-      const connectionInfo = request.body;
-      if (!connectionInfo) {
-        reply.status(400).send({ error: 'connectionInfo is required' });
-      }
-
-      try {
-        await connectionManager.saveConnectionInfo(connectionInfo);
-        reply.send({ ok: true });
-      } catch (err) {
-        reply.status(400).send({ error: err.message });
-      }
+  fastify.post('/connection-info', async (request, reply) => {
+    const connectionInfo = request.body;
+    if (!connectionInfo) {
+      reply.status(400).send({ error: 'connectionInfo is required' });
     }
-  );
+
+    try {
+      await connectionManager.saveConnectionInfo(connectionInfo);
+      reply.send({ ok: true });
+    } catch (err) {
+      reply.status(400).send({ error: err.message });
+    }
+  });
 
   // Delete connection
-  fastify.delete(
-    '/explorer/v1/groups/:projectId/clusters/connectionInfo/:connectionId',
-    async (request, reply) => {
-      const connectionId = request.params.connectionId;
+  fastify.delete('/connection-info/:connectionId', async (request, reply) => {
+    const connectionId = request.params.connectionId;
 
-      if (!connectionId) {
-        reply.status(400).send({ error: 'connectionId is required' });
-      }
-      try {
-        await connectionManager.deleteConnectionInfo(connectionId);
-        reply.send({ ok: true });
-      } catch (err) {
-        reply.status(400).send({ error: err.message });
-      }
+    if (!connectionId) {
+      reply.status(400).send({ error: 'connectionId is required' });
     }
-  );
-
-  // Settings
-  fastify.get('/settings', (request, reply) => {
-    reply.send(settings);
+    try {
+      await connectionManager.deleteConnectionInfo(connectionId);
+      reply.send({ ok: true });
+    } catch (err) {
+      reply.status(400).send({ error: err.message });
+    }
   });
 
   fastify.post('/settings/optInDataExplorerGenAIFeatures', (request, reply) => {
@@ -445,14 +425,9 @@ module.exports = function (fastify, opts, done) {
   );
 
   fastify.post(
-    '/ai/v1/groups/:projectId/mql-query',
+    '/ai/mql-query',
     { preHandler: fastify.csrfProtection },
     async (request, reply) => {
-      const projectId = request.params.projectId;
-      if (projectId !== args.projectId) {
-        reply.status(400).send({ error: 'Project ID mismatch' });
-      }
-
       if (!args.enableGenAiFeatures) {
         reply.status(400).send({ error: 'Gen AI is not enabled' });
       }
@@ -480,14 +455,9 @@ module.exports = function (fastify, opts, done) {
   );
 
   fastify.post(
-    '/ai/v1/groups/:projectId/mql-aggregation',
+    '/ai/mql-aggregation',
     { preHandler: fastify.csrfProtection },
     async (request, reply) => {
-      const projectId = request.params.projectId;
-      if (projectId !== args.projectId) {
-        reply.status(400).send({ error: 'Project ID mismatch' });
-      }
-
       if (!args.enableGenAiFeatures) {
         reply.status(400).send({ error: 'Gen AI is not enabled' });
       }
@@ -515,11 +485,6 @@ module.exports = function (fastify, opts, done) {
       }
     }
   );
-
-  fastify.setNotFoundHandler((request, reply) => {
-    const csrfToken = reply.generateCsrf();
-    reply.view('index.eta', { csrfToken, appName: args.appName });
-  });
 
   done();
 };

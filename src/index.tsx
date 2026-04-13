@@ -11,12 +11,11 @@ import {
 import { useWorkspaceTabRouter } from '../compass/packages/compass-web/sandbox/sandbox-workspace-tab-router';
 import { type AllPreferences } from '../compass/packages/compass-preferences-model/src';
 import { compassWebLogger } from './logger';
+import { getAPIRoute } from './shared';
 import { CompassWebConnectionStorage } from './connection-storage';
 import { SandboxConnectionStorageProvider } from '../compass/packages/compass-web/src/connection-storage';
+
 interface ProjectParams {
-  projectId: string;
-  orgId: string;
-  appName: string;
   preferences: Partial<AllPreferences>;
 }
 
@@ -69,22 +68,10 @@ const App = () => {
     React.useState<ProjectParams | null>(null);
 
   useEffect(() => {
-    void fetch('/projectId')
-      .then(async (res) => {
-        const projectId = await res.text();
-
-        if (!projectId) {
-          throw new Error('Failed to get projectId');
-        }
-        const { orgId, appName, preferences } = await fetch(
-          `/cloud-mongodb-com/v2/${projectId}/params`
-        ).then((res) => {
-          return res.json();
-        });
+    fetch(getAPIRoute('settings'))
+      .then((res) => res.json())
+      .then(({ preferences }) => {
         setProjectParams({
-          projectId,
-          orgId,
-          appName,
           preferences,
         });
       })
@@ -102,12 +89,12 @@ const App = () => {
       {projectParams ? (
         <WithConnectionStorageProvider
           preferences={projectParams.preferences}
-          projectId={projectParams.projectId}
+          projectId="-"
         >
           <CompassWeb
-            projectId={projectParams.projectId}
-            orgId={projectParams.orgId}
-            appName={projectParams.appName}
+            projectId="-"
+            orgId="-"
+            appName="Compass Web"
             onActiveWorkspaceTabChange={updateCurrentTab}
             initialWorkspace={currentTab ?? undefined}
             initialPreferences={{
