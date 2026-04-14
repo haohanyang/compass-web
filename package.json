@@ -35,6 +35,7 @@
     "@fastify/static": "^8.2.0",
     "@fastify/view": "^11.1.0",
     "@fastify/websocket": "^11.1.0",
+    "@mongosh/node-runtime-worker-thread": "^3.3.28",
     "eta": "^3.5.0",
     "fastify": "^5.3.3",
     "lodash": "^4.17.21",
@@ -48,9 +49,11 @@
     "stream-json": "^1.7.5",
     "strip-bom-stream": "^4.0.0",
     "yargs": "^17.7.2",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "web-worker": "^1.5.0"
   },
   "devDependencies": {
+    "@mongosh/browser-runtime-core": "^3.16.4",
     "@babel/register": "^7.28.3",
     "@rollup/plugin-alias": "^5.1.1",
     "@rollup/plugin-commonjs": "^28.0.8",
@@ -59,7 +62,11 @@
     "mocha": "^11.7.5",
     "rollup": "^4.52.5"
   },
-  "pnpm": {},
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "interruptor"
+    ]
+  },
   "keywords": [
     "mongodb",
     "compass",

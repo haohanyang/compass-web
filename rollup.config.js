@@ -26,6 +26,8 @@ const options = {
     'openai/helpers/zod',
     'lowdb',
     'lowdb/node',
+    '@mongosh/node-runtime-worker-thread',
+    'web-worker',
   ],
   plugins: [
     json(),
