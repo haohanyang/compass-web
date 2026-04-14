@@ -11,7 +11,7 @@ on:
       version:
         description: "The version to publish"
         required: false
-        default: ''
+        default: ""
         type: string
 
 jobs:
@@ -26,7 +26,7 @@ jobs:
         if: ${{ github.event.inputs.version == '' }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
       - name: Check version
         id: check-version
         run: |
