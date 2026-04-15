@@ -12,6 +12,7 @@ const options = {
   output: {
     format: 'cjs',
     file: './dist/server.js',
+    dynamicImportInCjs: true,
   },
   external: [
     ...require('module').builtinModules,

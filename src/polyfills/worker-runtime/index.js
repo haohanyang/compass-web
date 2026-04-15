@@ -2,7 +2,22 @@ import { EventEmitter } from 'events';
 
 export class WorkerRuntime {
   constructor(uri, driverOptions, cliOptions, workerOptions, eventEmitter) {
-    console.log(uri, driverOptions, cliOptions, workerOptions);
+    console.log(
+      'New WorkerRuntime created',
+      uri,
+      driverOptions,
+      cliOptions,
+      workerOptions
+    );
+
+    this.workerConfigs = {
+      uri,
+      driverOptions: { ...driverOptions, parentHandle: null },
+      cliOptions,
+      workerOptions,
+    };
+
+    this.eventEmitter = eventEmitter;
   }
 
   /**
@@ -11,10 +26,33 @@ export class WorkerRuntime {
    * @returns {Promise<import('@mongosh/browser-runtime-core').RuntimeEvaluationResult>}
    */
   async evaluate(code) {
-    console.log('eval ' + code);
-    return {
-      printable: false,
-    };
+    const res = await fetch('/api/shell/evaluate', {
+      method: 'POST',
+      body: JSON.stringify({
+        ...this.workerConfigs,
+        code,
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!res.ok) {
+      // Re-instantiate error
+      const { error: errorValue } = await res.json();
+
+      const error = new Error();
+      error.name = errorValue.name;
+      error.message = errorValue.message;
+      error.stack = ' ';
+
+      if (errorValue.code) {
+        error.code = errorValue.code;
+      }
+
+      throw error;
+    }
+    return await res.json();
   }
 
   /**
@@ -23,27 +61,64 @@ export class WorkerRuntime {
    * @returns {Promise<import('@mongosh/browser-runtime-core').Completion[]>}
    */
   async getCompletions(code) {
-    return [];
+    const res = await fetch('/api/shell/completions', {
+      method: 'POST',
+      body: JSON.stringify({
+        ...this.workerConfigs,
+        code,
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return await res.json();
   }
 
   async getShellPrompt() {
-    return '';
+    const res = await fetch('/api/shell/shellPrompt', {
+      method: 'POST',
+      body: JSON.stringify(this.workerConfigs),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    return (await res.json()).prompt;
   }
 
-  setEvaluationListener(listener) {
-    return null;
+  setEvaluationListener(_listener) {
+    console.warn('setEvaluationListener not implemented');
   }
 
   async terminate() {
-    return Promise.resolve();
+    await fetch('/api/shell/terminate', {
+      method: 'POST',
+      body: JSON.stringify(this.workerConfigs),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   }
 
   async interrupt() {
-    return true;
+    const res = await fetch('/api/shell/interrupt', {
+      method: 'POST',
+      body: JSON.stringify(this.workerConfigs),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return (await res.json()).result;
   }
 
   async waitForRuntimeToBeReady() {
-    return;
+    await fetch('/api/shell/init', {
+      method: 'POST',
+      body: JSON.stringify(this.workerConfigs),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   }
 }
 

@@ -6,6 +6,8 @@ const { InMemoryConnectionManager } = require('./connection-manager');
 const { readCliArgs } = require('./cli');
 const { registerAuth } = require('./auth');
 
+global.Worker = require('web-worker');
+
 const args = readCliArgs();
 
 const connectionManager = new InMemoryConnectionManager(args);

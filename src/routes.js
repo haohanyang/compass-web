@@ -1,5 +1,7 @@
 const crypto = require('crypto');
 const { Writable } = require('stream');
+const { EventEmitter } = require('events');
+const { WorkerRuntime } = require('@mongosh/node-runtime-worker-thread');
 const { generateQuery, generateAggregation } = require('./gen-ai');
 const DataService = require('./data-service');
 const {
@@ -52,6 +54,11 @@ module.exports = function (fastify, opts, done) {
   if (args.basicAuth) {
     fastify.addHook('onRequest', fastify.basicAuth);
   }
+
+  const emitter = new EventEmitter();
+
+  /** @type {import('@mongosh/node-runtime-worker-thread').WorkerRuntime | null} */
+  let workerRuntime = null;
 
   fastify.get('/version', (request, reply) => {
     reply.send({
@@ -485,6 +492,101 @@ module.exports = function (fastify, opts, done) {
       }
     }
   );
+
+  fastify.post('/shell/init', async (request, reply) => {
+    if (!workerRuntime) {
+      const { uri, driverOptions, cliOptions, workerOptions } = request.body;
+      workerRuntime = new WorkerRuntime(
+        uri,
+        driverOptions,
+        cliOptions,
+        {
+          ...workerOptions,
+          type: 'module',
+        },
+        emitter
+      );
+
+      await workerRuntime.waitForRuntimeToBeReady();
+    }
+
+    reply.send({ ok: true });
+  });
+
+  fastify.post('/shell/evaluate', async (request, reply) => {
+    try {
+      if (!workerRuntime) {
+        const { uri, driverOptions, cliOptions, workerOptions } = request.body;
+        workerRuntime = new WorkerRuntime(
+          uri,
+          driverOptions,
+          cliOptions,
+          {
+            ...workerOptions,
+            type: 'module',
+          },
+          emitter
+        );
+
+        await workerRuntime.waitForRuntimeToBeReady();
+      }
+
+      const { code } = request.body;
+      const res = await workerRuntime.evaluate(code);
+
+      reply.send(res);
+    } catch (err) {
+      reply.status(400).send({
+        error: {
+          name: err.name,
+          message: err.message,
+          code: err.code,
+        },
+      });
+    }
+  });
+
+  fastify.post('/shell/completions', async (request, reply) => {
+    if (!workerRuntime) {
+      reply.status(400).send({ error: 'Worker runtime is not initialized' });
+      return;
+    }
+
+    const { code } = request.body;
+    const res = await workerRuntime.getCompletions(code);
+
+    reply.send(res);
+  });
+
+  fastify.post('/shell/shellPrompt', async (request, reply) => {
+    if (!workerRuntime) {
+      reply.status(400).send({ error: 'Worker runtime is not initialized' });
+    }
+
+    const prompt = await workerRuntime.getShellPrompt();
+
+    reply.send({ prompt });
+  });
+
+  fastify.post('/shell/terminate', async (request, reply) => {
+    if (!workerRuntime) {
+      reply.status(400).send({ error: 'Worker runtime is not initialized' });
+      return;
+    }
+
+    await workerRuntime.terminate();
+    reply.send({ ok: true });
+  });
+
+  fastify.post('/shell/interrupt', async (request, reply) => {
+    if (!workerRuntime) {
+      reply.status(400).send({ error: 'Worker runtime is not initialized' });
+      return;
+    }
+
+    const res = await workerRuntime.interrupt();
+    reply.send({ result: res });
+  });
 
   done();
 };
