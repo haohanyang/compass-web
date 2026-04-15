@@ -3,6 +3,7 @@
 const net = require('net');
 const tls = require('tls');
 const { ConnectionString } = require('mongodb-connection-string-url');
+const { WorkerRuntimeManager } = require('./worker-runtime-manager');
 
 // WebSocket message utilities
 const SOCKET_ERROR_EVENT_LIST = ['error', 'close', 'timeout', 'parseError'];
@@ -70,6 +71,8 @@ function handleWebsocketConnection(fastify, socket, request) {
       return false;
     }
   });
+
+  socket.isAlive = false;
 
   request.log.info(
     'new ws connection (total %s)',
@@ -198,13 +201,41 @@ function handleWebsocketConnection(fastify, socket, request) {
  * @param {import('fastify').FastifyPluginCallback} done
  */
 module.exports = function (fastify, _opts, done) {
-  fastify.get('/ws', { websocket: true }, (socket, req) => {
-    handleWebsocketConnection(fastify, socket, req);
+  fastify.get('/ws', { websocket: true }, (socket, request) => {
+    handleWebsocketConnection(fastify, socket, request);
   });
 
-  fastify.get('/ws-proxy', { websocket: true }, (socket, req) =>
-    handleWebsocketConnection(fastify, socket, req)
+  fastify.get('/ws-proxy', { websocket: true }, (socket, request) =>
+    handleWebsocketConnection(fastify, socket, request)
   );
+
+  fastify.get('/heartbeat', { websocket: true }, (socket, request) => {
+    const sessionId = request.query['sessionId'];
+    if (!sessionId) {
+      socket.close();
+    }
+
+    socket.isAlive = true;
+    socket.sessionId = sessionId;
+
+    socket.send('ping');
+
+    /** @type {WorkerRuntimeManager} */
+    const workerRuntimeManager = fastify.workerRuntimeManager;
+    workerRuntimeManager.createWorkerRuntimeSocket(sessionId, socket);
+
+    request.log.info(`New session ${sessionId} created`);
+
+    socket.on('close', () => {
+      request.log.info(`Session ${sessionId} closed`);
+      workerRuntimeManager.terminateWorkerRuntime(sessionId);
+    });
+
+    socket.on('error', (err) => {
+      request.log.error(`Socket error: ${err.message}`);
+      workerRuntimeManager.terminateWorkerRuntime(sessionId);
+    });
+  });
 
   done();
 };

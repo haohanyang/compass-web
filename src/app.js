@@ -15,6 +15,33 @@ const connectionManager = new InMemoryConnectionManager(args);
 
 const workerRuntimeManager = new WorkerRuntimeManager();
 
+// setInterval(() => {
+//   console.log("Worker Runtimes", Object.keys(workerRuntimeManager.workerRuntimes));
+// }, 5000);
+
+// setInterval(() => {
+//   console.log("Sockets", Object.keys(workerRuntimeManager.sockets));
+// }, 5000);
+
+// Setup the interval to check all sockets every 30 seconds
+const checkLivenessInterval = setInterval(() => {
+  fastify.websocketServer.clients.forEach((socket) => {
+    if (socket.isAlive === false) {
+      console.log('Terminating inactive socket');
+      if (socket.sessionId) {
+        workerRuntimeManager.terminateWorkerRuntime(socket.sessionId);
+      } else {
+        socket.terminate();
+      }
+
+      return;
+    }
+
+    socket.isAlive = false;
+    socket.ping();
+  });
+}, 30000);
+
 const exportIds = new NodeCache({ stdTTL: 3600 });
 
 const fastify = require('fastify')({
@@ -81,6 +108,12 @@ fastify.after(() => {
       baseRoute: baseRoute,
     });
   });
+});
+
+// Clean up interval if server closes
+fastify.addHook('onClose', (instance, done) => {
+  clearInterval(checkLivenessInterval);
+  done();
 });
 
 module.exports = fastify;

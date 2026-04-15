@@ -4,6 +4,9 @@ export class WorkerRuntimeManager {
   constructor() {
     /** @type {Record<string, WorkerRuntime>} */
     this.workerRuntimes = {};
+
+    /** @type {Record<string, import('ws').WebSocket>} */
+    this.sockets = {};
   }
 
   getWorkerRuntime(id) {
@@ -37,16 +40,22 @@ export class WorkerRuntimeManager {
 
     this.workerRuntimes[id] = workerRuntime;
 
-    // Terminate after 10s
-    // setTimeout(() => this.terminateWorkerRuntime(id), 10000)
-
     return workerRuntime;
+  }
+
+  createWorkerRuntimeSocket(id, socket) {
+    this.sockets[id] = socket;
   }
 
   async terminateWorkerRuntime(id) {
     if (this.workerRuntimes[id]) {
       await this.workerRuntimes[id].terminate();
       delete this.workerRuntimes[id];
+    }
+
+    if (this.sockets[id]) {
+      this.sockets[id].terminate();
+      delete this.sockets[id];
     }
   }
 

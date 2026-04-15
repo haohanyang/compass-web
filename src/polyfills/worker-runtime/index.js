@@ -11,8 +11,10 @@ export class WorkerRuntime {
       workerOptions
     );
 
+    this.id = randomBytes(8).toString('hex');
+
     this.configs = {
-      id: randomBytes(8).toString('hex'),
+      id: this.id,
       uri,
       driverOptions: { ...driverOptions, parentHandle: null },
       cliOptions,
@@ -20,6 +22,9 @@ export class WorkerRuntime {
     };
 
     this.eventEmitter = eventEmitter;
+
+    // Respond to heartbeat
+    this.connect();
   }
 
   /**
@@ -76,8 +81,8 @@ export class WorkerRuntime {
     return (await res.json()).prompt;
   }
 
-  setEvaluationListener(_listener) {
-    console.warn('setEvaluationListener not implemented');
+  setEvaluationListener(listener) {
+    console.warn('setEvaluationListener not implemented', listener);
   }
 
   async terminate() {
@@ -103,6 +108,22 @@ export class WorkerRuntime {
 
   async waitForRuntimeToBeReady() {
     console.warn('waitForRuntimeToBeReady not implemented');
+  }
+
+  connect() {
+    this.ws = new WebSocket(`/heartbeat?sessionId=${this.id}`);
+
+    this.ws.onopen = (_event) => {
+      console.log(`Connection started, session id ${this.id}`);
+    };
+
+    this.ws.onclose = () => {
+      console.log('Socket closed.');
+    };
+
+    this.ws.onerror = (err) => {
+      console.error('Socket error', err);
+    };
   }
 }
 
