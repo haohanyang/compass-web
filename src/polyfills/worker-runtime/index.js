@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import { randomBytes } from 'crypto';
 
 export class WorkerRuntime {
   constructor(uri, driverOptions, cliOptions, workerOptions, eventEmitter) {
@@ -10,7 +11,8 @@ export class WorkerRuntime {
       workerOptions
     );
 
-    this.workerConfigs = {
+    this.configs = {
+      id: randomBytes(8).toString('hex'),
       uri,
       driverOptions: { ...driverOptions, parentHandle: null },
       cliOptions,
@@ -29,7 +31,7 @@ export class WorkerRuntime {
     const res = await fetch('/api/shell/evaluate', {
       method: 'POST',
       body: JSON.stringify({
-        ...this.workerConfigs,
+        ...this.configs,
         code,
       }),
       headers: {
@@ -37,21 +39,7 @@ export class WorkerRuntime {
       },
     });
 
-    if (!res.ok) {
-      // Re-instantiate error
-      const { error: errorValue } = await res.json();
-
-      const error = new Error();
-      error.name = errorValue.name;
-      error.message = errorValue.message;
-      error.stack = ' ';
-
-      if (errorValue.code) {
-        error.code = errorValue.code;
-      }
-
-      throw error;
-    }
+    await handleError(res);
     return await res.json();
   }
 
@@ -64,20 +52,22 @@ export class WorkerRuntime {
     const res = await fetch('/api/shell/completions', {
       method: 'POST',
       body: JSON.stringify({
-        ...this.workerConfigs,
+        ...this.configs,
         code,
       }),
       headers: {
         'Content-Type': 'application/json',
       },
     });
+
+    await handleError(res);
     return await res.json();
   }
 
   async getShellPrompt() {
     const res = await fetch('/api/shell/shellPrompt', {
       method: 'POST',
-      body: JSON.stringify(this.workerConfigs),
+      body: JSON.stringify(this.configs),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -93,7 +83,7 @@ export class WorkerRuntime {
   async terminate() {
     await fetch('/api/shell/terminate', {
       method: 'POST',
-      body: JSON.stringify(this.workerConfigs),
+      body: JSON.stringify(this.configs),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -103,7 +93,7 @@ export class WorkerRuntime {
   async interrupt() {
     const res = await fetch('/api/shell/interrupt', {
       method: 'POST',
-      body: JSON.stringify(this.workerConfigs),
+      body: JSON.stringify(this.configs),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -112,13 +102,29 @@ export class WorkerRuntime {
   }
 
   async waitForRuntimeToBeReady() {
-    await fetch('/api/shell/init', {
-      method: 'POST',
-      body: JSON.stringify(this.workerConfigs),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    console.warn('waitForRuntimeToBeReady not implemented');
+  }
+}
+
+/**
+ *
+ * @param {Response} response
+ */
+async function handleError(response) {
+  if (!response.ok) {
+    // Re-instantiate error
+    const { error: errorValue } = await response.json();
+
+    const error = new Error();
+    error.name = errorValue.name;
+    error.message = errorValue.message;
+    error.stack = ' ';
+
+    if (errorValue.code) {
+      error.code = errorValue.code;
+    }
+
+    throw error;
   }
 }
 

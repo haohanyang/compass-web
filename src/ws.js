@@ -48,9 +48,9 @@ function decodeMessageWithTypeByte(message) {
 /**
  * @param {import('fastify').FastifyInstance} fastify
  * @param {import('@fastify/websocket').WebSocket} socket
- * @param {import('fastify').FastifyRequest} req
+ * @param {import('fastify').FastifyRequest} request
  */
-function handleWebsocketConnection(fastify, socket, req) {
+function handleWebsocketConnection(fastify, socket, request) {
   const args = fastify.args;
 
   /** @type {ConnectionString[]} */
@@ -71,7 +71,7 @@ function handleWebsocketConnection(fastify, socket, req) {
     }
   });
 
-  console.log(
+  request.log.info(
     'new ws connection (total %s)',
     fastify.websocketServer.clients.size
   );
@@ -87,7 +87,7 @@ function handleWebsocketConnection(fastify, socket, req) {
       const { tls: useSecureConnection, ...connectOptions } =
         decodeMessageWithTypeByte(message);
 
-      console.log(
+      request.log.info(
         'setting up new%s connection to %s:%s',
         useSecureConnection ? ' secure' : '',
         connectOptions.host,
@@ -163,12 +163,12 @@ function handleWebsocketConnection(fastify, socket, req) {
       const connectEvent = useSecureConnection ? 'secureConnect' : 'connect';
       SOCKET_ERROR_EVENT_LIST.forEach((evt) => {
         mongoSocket.on(evt, (err) => {
-          console.log('server socket error event (%s)', evt, err);
+          request.log.info('server socket error event (%s)', evt, err);
           socket.close(evt === 'close' ? 1001 : 1011);
         });
       });
       mongoSocket.on(connectEvent, () => {
-        console.log(
+        request.log.info(
           'server socket connected at %s:%s',
           connectOptions.host,
           connectOptions.port

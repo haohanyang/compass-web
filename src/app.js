@@ -3,6 +3,7 @@
 const { Eta } = require('eta');
 const NodeCache = require('node-cache');
 const { InMemoryConnectionManager } = require('./connection-manager');
+const { WorkerRuntimeManager } = require('./worker-runtime-manager');
 const { readCliArgs } = require('./cli');
 const { registerAuth } = require('./auth');
 
@@ -11,6 +12,8 @@ global.Worker = require('web-worker');
 const args = readCliArgs();
 
 const connectionManager = new InMemoryConnectionManager(args);
+
+const workerRuntimeManager = new WorkerRuntimeManager();
 
 const exportIds = new NodeCache({ stdTTL: 3600 });
 
@@ -23,6 +26,8 @@ fastify.decorate('args', args);
 fastify.decorate('exportIds', exportIds);
 
 fastify.decorate('connectionManager', connectionManager);
+
+fastify.decorate('workerRuntimeManager', workerRuntimeManager);
 
 fastify.register(require('@fastify/static'), {
   root: __dirname,
