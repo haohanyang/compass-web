@@ -97,7 +97,6 @@ function readCliArgs() {
     .options('master-password', {
       type: 'string',
       description: 'Master password to encrypt/decrypt connection credentials',
-      default: 'default-master-password',
     })
     .options('enable-shell', {
       type: 'boolean',

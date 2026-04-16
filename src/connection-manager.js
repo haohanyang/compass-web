@@ -181,7 +181,9 @@ class InMemoryConnectionManager extends ConnectionManager {
 
   async close() {
     await Promise.all(
-      this.#connections.values().map(({ mongoClient }) => mongoClient.close())
+      [...this.#connections.values()].map(({ mongoClient }) =>
+        mongoClient.close()
+      )
     );
   }
 }
@@ -296,26 +298,33 @@ class EncryptedJsonFileConnectionManager extends ConnectionManager {
   }
 
   async getMongoClientById(id) {
-    /**
-     * @type {MongoClient?}
-     */
-    let mongoClient;
+    const cached = this.#mongoClients.get(id);
+    if (cached) {
+      return cached;
+    }
 
-    mongoClient = this.#mongoClients.get(id);
-    if (mongoClient) {
+    const presetMatch = this.#presetConnections.find((c) => c.id === id);
+    if (presetMatch) {
+      const mongoClient = new MongoClient(
+        presetMatch.connectionOptions.connectionString
+      );
+      this.#mongoClients.set(id, mongoClient);
       return mongoClient;
     }
 
-    const allConnections = await this.getAllConnections(false);
-    const uri = allConnections.find((c) => c.id === id)?.connectionOptions
-      .connectionString;
-
-    if (uri) {
-      mongoClient = new MongoClient(uri);
-      this.#mongoClients.set(id, mongoClient);
+    if (this.#editable) {
+      const db = await this.#getDb();
+      const stored = db.data.connections.find((c) => c.id === id);
+      if (stored) {
+        const mongoClient = new MongoClient(
+          stored.connectionOptions.connectionString
+        );
+        this.#mongoClients.set(id, mongoClient);
+        return mongoClient;
+      }
     }
 
-    return mongoClient;
+    return undefined;
   }
 
   /**
@@ -369,8 +378,10 @@ class EncryptedJsonFileConnectionManager extends ConnectionManager {
       await this.#mongoClients.get(id)?.close();
       this.#mongoClients.delete(id);
 
-      db.data.connections = db.data.connections.filter((c) => c.id !== id);
-      await db.write();
+      await db.update(({ connections }) => {
+        const idx = connections.findIndex((c) => c.id === id);
+        if (idx !== -1) connections.splice(idx, 1);
+      });
     } else {
       throw new Error('Editing connections is disabled');
     }
@@ -378,7 +389,7 @@ class EncryptedJsonFileConnectionManager extends ConnectionManager {
 
   async close() {
     await Promise.all(
-      this.#mongoClients.values().map((mongoClient) => mongoClient.close())
+      [...this.#mongoClients.values()].map((mongoClient) => mongoClient.close())
     );
   }
 }

@@ -2,7 +2,10 @@
 
 const { Eta } = require('eta');
 const NodeCache = require('node-cache');
-const { InMemoryConnectionManager } = require('./connection-manager');
+const {
+  InMemoryConnectionManager,
+  EncryptedJsonFileConnectionManager,
+} = require('./connection-manager');
 const { WorkerRuntimeManager } = require('./worker-runtime-manager');
 const { readCliArgs } = require('./cli');
 const { registerAuth } = require('./auth');
@@ -11,7 +14,13 @@ global.Worker = require('web-worker');
 
 const args = readCliArgs();
 
-const connectionManager = new InMemoryConnectionManager(args);
+let connectionManager;
+
+if (args.masterPassword) {
+  connectionManager = new EncryptedJsonFileConnectionManager(args);
+} else {
+  connectionManager = new InMemoryConnectionManager(args);
+}
 
 const workerRuntimeManager = new WorkerRuntimeManager(args);
 

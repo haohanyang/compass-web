@@ -6,9 +6,10 @@
 const path = require('path');
 const fs = require('fs').promises;
 const crypto = require('crypto');
+const { promisify } = require('util');
 const { JSONFile } = require('lowdb/node');
 
-const dbSaltName = 'connections.salt';
+const pbkdf2 = promisify(crypto.pbkdf2);
 
 // Encryption configuration
 const ALGORITHM = 'aes-256-gcm';
@@ -35,12 +36,22 @@ class JSONFileWithEncryption extends JSONFile {
   #salt;
 
   /**
+   * @type {string}
+   */
+  #saltPath;
+
+  /**
    * @param {PathLike} filename
    * @param {string} masterPassword
    */
   constructor(filename, masterPassword) {
     super(filename);
     this.#masterPassword = masterPassword;
+    const ext = path.extname(filename.toString());
+    this.#saltPath = path.join(
+      path.dirname(filename.toString()),
+      path.basename(filename.toString(), ext) + '.salt'
+    );
   }
 
   /**
@@ -49,7 +60,7 @@ class JSONFileWithEncryption extends JSONFile {
    */
   async #getOrCreateSalt() {
     if (!this.#salt) {
-      const saltPath = path.resolve(__dirname, '..', dbSaltName);
+      const saltPath = this.#saltPath;
       try {
         const saltHex = await fs.readFile(saltPath, 'utf8');
         this.#salt = Buffer.from(saltHex, 'hex');
@@ -69,7 +80,7 @@ class JSONFileWithEncryption extends JSONFile {
     const salt = await this.#getOrCreateSalt();
 
     if (!this.#encryptionKey) {
-      this.#encryptionKey = crypto.pbkdf2Sync(
+      this.#encryptionKey = await pbkdf2(
         this.#masterPassword,
         salt,
         ITERATIONS,
