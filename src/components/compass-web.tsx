@@ -11,6 +11,7 @@ import WorkspacesPlugin, {
   WorkspacesProvider,
 } from '../../compass/packages/compass-workspaces/src';
 import { CompassSettingsPlugin } from '../../compass/packages/compass-settings/src';
+import { WorkspaceTab as ShellWorkspaceTab } from '../../compass/packages/compass-shell';
 import {
   DatabasesWorkspaceTab,
   CollectionsWorkspaceTab,
@@ -136,6 +137,7 @@ function CompassWorkspace({
         CollectionsWorkspaceTab,
         CollectionWorkspace,
         DataModelingWorkspace,
+        ShellWorkspaceTab,
       ]}
     >
       <CollectionTabsProvider

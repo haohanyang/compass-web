@@ -31,7 +31,7 @@ const pkgJson = require('../package.json');
  * @param {import('fastify').FastifyPluginOptions} opts
  * @param {import('fastify').FastifyPluginCallback} done
  */
-module.exports = function (fastify, opts, done) {
+module.exports = function (fastify, _opts, done) {
   const args = fastify.args;
 
   /** * @type {import('node-cache')}*/
@@ -53,14 +53,14 @@ module.exports = function (fastify, opts, done) {
     fastify.addHook('onRequest', fastify.basicAuth);
   }
 
-  fastify.get('/version', (request, reply) => {
+  fastify.get('/version', (_request, reply) => {
     reply.send({
       version: pkgJson.version,
       source: `https://github.com/haohanyang/compass-web/tree/v${pkgJson.version}`,
     });
   });
 
-  fastify.get('/settings', (request, reply) => {
+  fastify.get('/settings', (_request, reply) => {
     const preferences = settings;
 
     reply.send({
@@ -84,6 +84,7 @@ module.exports = function (fastify, opts, done) {
         cloudBaseUrl: args.baseRoute ? `/${args.baseRoute}/api` : '/api',
         atlasApiBaseUrl: args.baseRoute ? `/${args.baseRoute}/api` : '/api',
         authPortalUrl: '',
+        enableShell: args.enableShell,
       },
     });
   });

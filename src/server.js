@@ -38,6 +38,10 @@ fastify.listen({ port: args.port, host: args.host }, (err, address) => {
 
     try {
       await connectionManager.close();
+
+      // Terminate mongosh worker runtimes
+      await fastify.workerRuntimeManager.close();
+
       await fastify.close();
       exportIds.close();
       console.log('Server closed successfully.');

@@ -3,12 +3,36 @@
 const { Eta } = require('eta');
 const NodeCache = require('node-cache');
 const { InMemoryConnectionManager } = require('./connection-manager');
+const { WorkerRuntimeManager } = require('./worker-runtime-manager');
 const { readCliArgs } = require('./cli');
 const { registerAuth } = require('./auth');
+
+global.Worker = require('web-worker');
 
 const args = readCliArgs();
 
 const connectionManager = new InMemoryConnectionManager(args);
+
+const workerRuntimeManager = new WorkerRuntimeManager(args);
+
+// Setup the interval to check all sockets every 30 seconds
+const checkLivenessInterval = setInterval(() => {
+  fastify.websocketServer.clients.forEach((socket) => {
+    if (socket.isAlive === false) {
+      console.log('Terminating inactive socket');
+      if (socket.sessionId) {
+        workerRuntimeManager.terminateWorkerRuntime(socket.sessionId);
+      } else {
+        socket.terminate();
+      }
+
+      return;
+    }
+
+    socket.isAlive = false;
+    socket.ping();
+  });
+}, 30000);
 
 const exportIds = new NodeCache({ stdTTL: 3600 });
 
@@ -21,6 +45,8 @@ fastify.decorate('args', args);
 fastify.decorate('exportIds', exportIds);
 
 fastify.decorate('connectionManager', connectionManager);
+
+fastify.decorate('workerRuntimeManager', workerRuntimeManager);
 
 fastify.register(require('@fastify/static'), {
   root: __dirname,
@@ -74,6 +100,12 @@ fastify.after(() => {
       baseRoute: baseRoute,
     });
   });
+});
+
+// Clean up interval if server closes
+fastify.addHook('onClose', (instance, done) => {
+  clearInterval(checkLivenessInterval);
+  done();
 });
 
 module.exports = fastify;

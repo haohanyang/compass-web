@@ -2,6 +2,7 @@
 
 const net = require('net');
 const tls = require('tls');
+const { EventEmitter } = require('events');
 const { ConnectionString } = require('mongodb-connection-string-url');
 
 // WebSocket message utilities
@@ -48,9 +49,9 @@ function decodeMessageWithTypeByte(message) {
 /**
  * @param {import('fastify').FastifyInstance} fastify
  * @param {import('@fastify/websocket').WebSocket} socket
- * @param {import('fastify').FastifyRequest} req
+ * @param {import('fastify').FastifyRequest} request
  */
-function handleWebsocketConnection(fastify, socket, req) {
+function handleWebsocketConnection(fastify, socket, request) {
   const args = fastify.args;
 
   /** @type {ConnectionString[]} */
@@ -71,9 +72,10 @@ function handleWebsocketConnection(fastify, socket, req) {
     }
   });
 
-  console.log(
-    'new ws connection (total %s)',
-    fastify.websocketServer.clients.size
+  socket.isAlive = false;
+
+  request.log.info(
+    `new ws connection (total ${fastify.websocketServer.clients.size})`
   );
 
   let mongoSocket;
@@ -87,7 +89,7 @@ function handleWebsocketConnection(fastify, socket, req) {
       const { tls: useSecureConnection, ...connectOptions } =
         decodeMessageWithTypeByte(message);
 
-      console.log(
+      request.log.info(
         'setting up new%s connection to %s:%s',
         useSecureConnection ? ' secure' : '',
         connectOptions.host,
@@ -163,15 +165,13 @@ function handleWebsocketConnection(fastify, socket, req) {
       const connectEvent = useSecureConnection ? 'secureConnect' : 'connect';
       SOCKET_ERROR_EVENT_LIST.forEach((evt) => {
         mongoSocket.on(evt, (err) => {
-          console.log('server socket error event (%s)', evt, err);
+          request.log.info('server socket error event (%s)', evt, err);
           socket.close(evt === 'close' ? 1001 : 1011);
         });
       });
       mongoSocket.on(connectEvent, () => {
-        console.log(
-          'server socket connected at %s:%s',
-          connectOptions.host,
-          connectOptions.port
+        request.log.info(
+          `server socket connected at ${connectOptions.host}:${connectOptions.port}`
         );
         mongoSocket.setTimeout(0);
         const encoded = encodeStringMessageWithTypeByte(
@@ -198,13 +198,127 @@ function handleWebsocketConnection(fastify, socket, req) {
  * @param {import('fastify').FastifyPluginCallback} done
  */
 module.exports = function (fastify, _opts, done) {
-  fastify.get('/ws', { websocket: true }, (socket, req) => {
-    handleWebsocketConnection(fastify, socket, req);
+  fastify.get('/ws', { websocket: true }, (socket, request) => {
+    handleWebsocketConnection(fastify, socket, request);
   });
 
-  fastify.get('/ws-proxy', { websocket: true }, (socket, req) =>
-    handleWebsocketConnection(fastify, socket, req)
+  fastify.get('/ws-proxy', { websocket: true }, (socket, request) =>
+    handleWebsocketConnection(fastify, socket, request)
   );
+
+  fastify.get('/shell', { websocket: true }, (socket, request) => {
+    /** @type {import('./worker-runtime-manager').WorkerRuntimeManager} */
+    const workerRuntimeManager = fastify.workerRuntimeManager;
+
+    let sessionId = null;
+    socket.isAlive = true;
+
+    socket.on('pong', () => {
+      socket.isAlive = true;
+    });
+
+    /**
+     * @param {string} reqId
+     * @param {boolean} ok
+     * @param {any} [payload]
+     * @param {{ name: string, message: string, code?: string }} [error]
+     */
+    function respond(reqId, ok, payload, error) {
+      socket.send(
+        JSON.stringify(
+          ok
+            ? { id: reqId, ok: true, payload }
+            : { id: reqId, ok: false, error }
+        )
+      );
+    }
+
+    socket.on('message', async (rawMessage) => {
+      let reqId;
+      try {
+        const { id, type, payload } = JSON.parse(rawMessage.toString());
+        reqId = id;
+
+        switch (type) {
+          case 'init': {
+            sessionId = payload.id;
+            socket.sessionId = sessionId;
+            const emitter = new EventEmitter();
+            emitter.emit('mongosh:new-user', '<compass user>');
+            await workerRuntimeManager.createWorkerRuntime({
+              ...payload,
+              emitter,
+            });
+            workerRuntimeManager.createWorkerRuntimeSocket(sessionId, socket);
+            request.log.info(`Shell session ${sessionId} initialized`);
+            respond(reqId, true, null);
+            break;
+          }
+          case 'evaluate': {
+            const rt = workerRuntimeManager.getWorkerRuntime(sessionId);
+            if (!rt)
+              throw Object.assign(new Error('Runtime not initialized'), {
+                name: 'RuntimeError',
+              });
+            respond(reqId, true, await rt.evaluate(payload.code));
+            break;
+          }
+          case 'completions': {
+            const rt = workerRuntimeManager.getWorkerRuntime(sessionId);
+            if (!rt)
+              throw Object.assign(new Error('Runtime not initialized'), {
+                name: 'RuntimeError',
+              });
+            respond(reqId, true, await rt.getCompletions(payload.code));
+            break;
+          }
+          case 'shellPrompt': {
+            const rt = workerRuntimeManager.getWorkerRuntime(sessionId);
+            if (!rt)
+              throw Object.assign(new Error('Runtime not initialized'), {
+                name: 'RuntimeError',
+              });
+            respond(reqId, true, { prompt: await rt.getShellPrompt() });
+            break;
+          }
+          case 'interrupt': {
+            const rt = workerRuntimeManager.getWorkerRuntime(sessionId);
+            if (!rt)
+              throw Object.assign(new Error('Runtime not initialized'), {
+                name: 'RuntimeError',
+              });
+            respond(reqId, true, { result: await rt.interrupt() });
+            break;
+          }
+          default:
+            respond(reqId, false, undefined, {
+              name: 'Error',
+              message: `Unknown message type: ${type}`,
+            });
+        }
+      } catch (err) {
+        request.log.error(`Shell session ${sessionId} error: ${err.message}`);
+        if (reqId) {
+          respond(reqId, false, undefined, {
+            name: err.name || 'Error',
+            message: err.message,
+            code: err.code,
+          });
+        }
+      }
+    });
+
+    socket.on('close', async () => {
+      request.log.info(`Shell session ${sessionId} closed`);
+      if (sessionId) {
+        await workerRuntimeManager.terminateWorkerRuntime(sessionId);
+      }
+    });
+
+    socket.on('error', (err) => {
+      request.log.error(`Shell socket error: ${err.message}`);
+    });
+  });
 
   done();
 };
