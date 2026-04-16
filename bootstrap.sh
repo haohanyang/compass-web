@@ -9,13 +9,8 @@ cd compass
 
 npm ci --ignore-scripts
 
-node_modules/.bin/lerna run bootstrap --stream \
-    --ignore @mongodb-js/mongodb-compass \
-    --ignore @mongodb-js/testing-library-compass \
-    --ignore compass-e2e-tests \
-    --ignore @mongodb-js/compass-smoke-tests \
-    --ignore @mongodb-js/compass-test-server \
-    --ignore @mongodb-js/compass-web \
-    --ignore @mongodb-js/compass-shell
+node_modules/.bin/lerna run bootstrap \
+    --scope @mongodb-js/webpack-config-compass \
+    --scope @mongodb-js/compass-import-export
 
 cp -r ./packages/compass-import-export/dist/ ../compass-import-export
