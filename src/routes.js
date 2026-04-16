@@ -1,6 +1,5 @@
 const crypto = require('crypto');
 const { Writable } = require('stream');
-const { EventEmitter } = require('events');
 const { generateQuery, generateAggregation } = require('./gen-ai');
 const DataService = require('./data-service');
 const {
@@ -41,9 +40,6 @@ module.exports = function (fastify, _opts, done) {
   /** @type {import('./connection-manager').ConnectionManager>} */
   const connectionManager = fastify.connectionManager;
 
-  /** @type {import('./worker-runtime-manager').WorkerRuntimeManager} */
-  const workerRuntimeManager = fastify.workerRuntimeManager;
-
   const settings = {
     enableGenAIFeatures: args.enableGenAiFeatures,
     enableGenAISampleDocumentPassing: args.enableGenAiSampleDocuments,
@@ -56,8 +52,6 @@ module.exports = function (fastify, _opts, done) {
   if (args.basicAuth) {
     fastify.addHook('onRequest', fastify.basicAuth);
   }
-
-  const emitter = new EventEmitter();
 
   fastify.get('/version', (_request, reply) => {
     reply.send({
@@ -491,94 +485,6 @@ module.exports = function (fastify, _opts, done) {
       }
     }
   );
-
-  fastify.post('/shell/evaluate', async (request, reply) => {
-    try {
-      const { id, code } = request.body;
-      let workerRuntime = workerRuntimeManager.getWorkerRuntime(id);
-
-      if (!workerRuntime) {
-        workerRuntime = await workerRuntimeManager.createWorkerRuntime({
-          ...request.body,
-          emitter,
-        });
-      }
-
-      const res = await workerRuntime.evaluate(code);
-
-      reply.send(res);
-    } catch (err) {
-      reply.status(400).send({
-        error: {
-          name: err.name,
-          message: err.message,
-          code: err.code,
-        },
-      });
-    }
-  });
-
-  fastify.post('/shell/completions', async (request, reply) => {
-    const { id, code } = request.body;
-    let workerRuntime = workerRuntimeManager.getWorkerRuntime(id);
-
-    if (!workerRuntime) {
-      reply.status(400).send({
-        error: {
-          name: 'RuntimeError',
-          message: 'Mongo Shell Worker Runtime is not initialized',
-        },
-      });
-      return;
-    }
-
-    const res = await workerRuntime.getCompletions(code);
-    reply.send(res);
-  });
-
-  fastify.post('/shell/shellPrompt', async (request, reply) => {
-    const { id } = request.body;
-    let workerRuntime = workerRuntimeManager.getWorkerRuntime(id);
-
-    if (!workerRuntime) {
-      reply.status(400).send({
-        error: {
-          name: 'RuntimeError',
-          message: 'Mongo Shell Worker Runtime is not initialized',
-        },
-      });
-      return;
-    }
-
-    const prompt = await workerRuntime.getShellPrompt();
-
-    reply.send({ prompt });
-  });
-
-  fastify.post('/shell/terminate', async (request, reply) => {
-    const { id } = request.body;
-    await workerRuntimeManager.terminateWorkerRuntime(id);
-
-    reply.send({ ok: true });
-  });
-
-  fastify.post('/shell/interrupt', async (request, reply) => {
-    const { id } = request.body;
-    let workerRuntime = workerRuntimeManager.getWorkerRuntime(id);
-
-    if (!workerRuntime) {
-      reply.status(400).send({
-        error: {
-          name: 'RuntimeError',
-          message: 'Mongo Shell Worker Runtime is not initialized',
-        },
-      });
-      return;
-    }
-
-    const res = await workerRuntime.interrupt();
-    reply.send({ result: res });
-  });
 
   done();
 };

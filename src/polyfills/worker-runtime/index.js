@@ -23,62 +23,31 @@ export class WorkerRuntime {
 
     this.eventEmitter = eventEmitter;
 
-    // Respond to heartbeat
     this.connect();
   }
 
   /**
-   *
    * @param {string} code
    * @returns {Promise<import('@mongosh/browser-runtime-core').RuntimeEvaluationResult>}
    */
   async evaluate(code) {
-    const res = await fetch('/api/shell/evaluate', {
-      method: 'POST',
-      body: JSON.stringify({
-        ...this.configs,
-        code,
-      }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    await handleError(res);
-    return await res.json();
+    await this._ready;
+    return await this._send('evaluate', { code });
   }
 
   /**
-   *
    * @param {string} code
    * @returns {Promise<import('@mongosh/browser-runtime-core').Completion[]>}
    */
   async getCompletions(code) {
-    const res = await fetch('/api/shell/completions', {
-      method: 'POST',
-      body: JSON.stringify({
-        ...this.configs,
-        code,
-      }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    await handleError(res);
-    return await res.json();
+    await this._ready;
+    return await this._send('completions', { code });
   }
 
   async getShellPrompt() {
-    const res = await fetch('/api/shell/shellPrompt', {
-      method: 'POST',
-      body: JSON.stringify(this.configs),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    return (await res.json()).prompt;
+    await this._ready;
+    const result = await this._send('shellPrompt', {});
+    return result?.prompt;
   }
 
   setEvaluationListener(listener) {
@@ -86,66 +55,76 @@ export class WorkerRuntime {
   }
 
   async terminate() {
-    await fetch('/api/shell/terminate', {
-      method: 'POST',
-      body: JSON.stringify(this.configs),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    this.ws?.close();
   }
 
   async interrupt() {
-    const res = await fetch('/api/shell/interrupt', {
-      method: 'POST',
-      body: JSON.stringify(this.configs),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    return (await res.json()).result;
+    await this._ready;
+    const result = await this._send('interrupt', {});
+    return result?.result;
   }
 
   async waitForRuntimeToBeReady() {
-    console.warn('waitForRuntimeToBeReady not implemented');
+    await this._ready;
+  }
+
+  /**
+   * @param {string} type
+   * @param {object} payload
+   * @returns {Promise<any>}
+   */
+  _send(type, payload) {
+    return new Promise((resolve, reject) => {
+      const id = `req-${++this._counter}`;
+      this._inflight.set(id, { resolve, reject });
+      this.ws.send(JSON.stringify({ id, type, payload }));
+    });
   }
 
   connect() {
-    this.ws = new WebSocket(`/heartbeat?sessionId=${this.id}`);
+    this._inflight = new Map();
+    this._counter = 0;
+    this.ws = new WebSocket('/shell');
 
-    this.ws.onopen = (_event) => {
-      console.log(`Connection started, session id ${this.id}`);
+    let resolveReady, rejectReady;
+    this._ready = new Promise((resolve, reject) => {
+      resolveReady = resolve;
+      rejectReady = reject;
+    });
+
+    this.ws.onopen = () => {
+      console.log(`Shell session ${this.id} opened`);
+      this._send('init', this.configs).then(resolveReady).catch(rejectReady);
+    };
+
+    this.ws.onmessage = (event) => {
+      const { id, ok, payload, error } = JSON.parse(event.data);
+      const pending = this._inflight.get(id);
+      if (!pending) return;
+      this._inflight.delete(id);
+      if (ok) {
+        pending.resolve(payload);
+      } else {
+        const err = new Error(error.message);
+        err.name = error.name;
+        if (error.code) err.code = error.code;
+        pending.reject(err);
+      }
     };
 
     this.ws.onclose = () => {
-      console.log('Socket closed.');
+      console.log(`Shell session ${this.id} closed`);
+      rejectReady?.(new Error('Connection closed'));
+      for (const { reject } of this._inflight.values()) {
+        reject(new Error('Connection closed'));
+      }
+      this._inflight.clear();
     };
 
     this.ws.onerror = (err) => {
-      console.error('Socket error', err);
+      console.error('Shell socket error', err);
+      rejectReady?.(err);
     };
-  }
-}
-
-/**
- *
- * @param {Response} response
- */
-async function handleError(response) {
-  if (!response.ok) {
-    // Re-instantiate error
-    const { error: errorValue } = await response.json();
-
-    const error = new Error();
-    error.name = errorValue.name;
-    error.message = errorValue.message;
-    error.stack = ' ';
-
-    if (errorValue.code) {
-      error.code = errorValue.code;
-    }
-
-    throw error;
   }
 }
 
