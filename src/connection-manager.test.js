@@ -11,32 +11,36 @@ const { ConnectionString } = require('mongodb-connection-string-url');
 const { EncryptedJsonFileConnectionManager } = require('./connection-manager');
 
 const masterPassword = 'masterPassword';
-const passwordHash = crypto
-  .createHash('sha256')
-  .update(masterPassword)
-  .digest('hex')
-  .slice(0, 16);
-const dbFilePath = path.join(
-  __dirname,
-  '..',
-  `connections-${passwordHash}.json`
-);
-const saltFilePath = path.join(
-  __dirname,
-  '..',
-  `connections-${passwordHash}.salt`
-);
+const newMasterPassword = 'newMasterPassword';
+
+function connectionFilePaths(password) {
+  const hash = crypto
+    .createHash('sha256')
+    .update(password)
+    .digest('hex')
+    .slice(0, 16);
+  return {
+    db: path.join(__dirname, '..', `connections-${hash}.json`),
+    salt: path.join(__dirname, '..', `connections-${hash}.salt`),
+  };
+}
+
+const { db: dbFilePath } = connectionFilePaths(masterPassword);
+
+async function unlinkIfExists(filePath) {
+  try {
+    await fs.unlink(filePath);
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+  }
+}
 
 describe('Test EncryptedJsonFileConnectionManager', () => {
   beforeEach(async () => {
-    for (const filePath of [dbFilePath, saltFilePath]) {
-      try {
-        await fs.unlink(filePath);
-      } catch (err) {
-        if (err.code !== 'ENOENT') {
-          throw err;
-        }
-      }
+    const { db, salt } = connectionFilePaths(masterPassword);
+    const { db: newDb, salt: newSalt } = connectionFilePaths(newMasterPassword);
+    for (const filePath of [db, salt, newDb, newSalt]) {
+      await unlinkIfExists(filePath);
     }
   });
 
@@ -69,5 +73,37 @@ describe('Test EncryptedJsonFileConnectionManager', () => {
       dbFileContent.connections[0].connectionOptions.connectionString,
       'mongodb://user:pass@localhost:27018'
     );
+  });
+
+  it('Should use a separate vault when master password changes', async () => {
+    const managerA = new EncryptedJsonFileConnectionManager({
+      enableEditConnections: true,
+      mongoURIs: [],
+      masterPassword,
+    });
+
+    await managerA.saveConnectionInfo({
+      id: 'conn-a',
+      connectionOptions: { connectionString: 'mongodb://localhost:27017' },
+    });
+
+    const managerB = new EncryptedJsonFileConnectionManager({
+      enableEditConnections: true,
+      mongoURIs: [],
+      masterPassword: newMasterPassword,
+    });
+
+    // New password starts with an empty vault
+    const connectionsB = await managerB.getAllConnections(false);
+    assert.strictEqual(connectionsB.length, 0);
+
+    // Old vault is still intact with the original password
+    const connectionsA = await managerA.getAllConnections(false);
+    assert.strictEqual(connectionsA.length, 1);
+    assert.strictEqual(connectionsA[0].id, 'conn-a');
+
+    // Each password produces a separate file on disk
+    const { db: newDbFilePath } = connectionFilePaths(newMasterPassword);
+    assert.notStrictEqual(dbFilePath, newDbFilePath);
   });
 });
