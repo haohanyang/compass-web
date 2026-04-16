@@ -5,12 +5,27 @@
  */
 const path = require('path');
 const fs = require('fs').promises;
+const crypto = require('crypto');
 const assert = require('assert');
 const { ConnectionString } = require('mongodb-connection-string-url');
 const { EncryptedJsonFileConnectionManager } = require('./connection-manager');
 
-const dbFilePath = path.join(__dirname, '..', 'connections.json');
-const saltFilePath = path.join(__dirname, '..', 'connections.salt');
+const masterPassword = 'masterPassword';
+const passwordHash = crypto
+  .createHash('sha256')
+  .update(masterPassword)
+  .digest('hex')
+  .slice(0, 16);
+const dbFilePath = path.join(
+  __dirname,
+  '..',
+  `connections-${passwordHash}.json`
+);
+const saltFilePath = path.join(
+  __dirname,
+  '..',
+  `connections-${passwordHash}.salt`
+);
 
 describe('Test EncryptedJsonFileConnectionManager', () => {
   beforeEach(async () => {
@@ -29,7 +44,7 @@ describe('Test EncryptedJsonFileConnectionManager', () => {
     const manager = new EncryptedJsonFileConnectionManager({
       enableEditConnections: true,
       mongoURIs: [new ConnectionString('mongodb://localhost:27017')],
-      masterPassword: 'masterPassword',
+      masterPassword,
     });
 
     await manager.saveConnectionInfo({
