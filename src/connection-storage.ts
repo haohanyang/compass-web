@@ -35,7 +35,7 @@ export class CompassWebConnectionStorage implements ConnectionStorage {
         connectionOptions: {
           ...conn.connectionOptions,
           lookup: () => ({
-            wsURL: baseRoute ? `/${baseRoute}/ws` : '/ws',
+            wsURL: baseRoute ? `/${baseRoute}/mongo` : '/mongo',
           }),
         },
       }));

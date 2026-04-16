@@ -51,7 +51,7 @@ function decodeMessageWithTypeByte(message) {
  * @param {import('@fastify/websocket').WebSocket} socket
  * @param {import('fastify').FastifyRequest} request
  */
-function handleWebsocketConnection(fastify, socket, request) {
+function handleMongoConnection(fastify, socket, request) {
   const args = fastify.args;
 
   /** @type {ConnectionString[]} */
@@ -198,13 +198,9 @@ function handleWebsocketConnection(fastify, socket, request) {
  * @param {import('fastify').FastifyPluginCallback} done
  */
 module.exports = function (fastify, _opts, done) {
-  fastify.get('/ws', { websocket: true }, (socket, request) => {
-    handleWebsocketConnection(fastify, socket, request);
+  fastify.get('/mongo', { websocket: true }, (socket, request) => {
+    handleMongoConnection(fastify, socket, request);
   });
-
-  fastify.get('/ws-proxy', { websocket: true }, (socket, request) =>
-    handleWebsocketConnection(fastify, socket, request)
-  );
 
   fastify.get('/shell', { websocket: true }, (socket, request) => {
     /** @type {import('./worker-runtime-manager').WorkerRuntimeManager} */
