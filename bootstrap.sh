@@ -7,7 +7,7 @@ export ELECTRON_SKIP_BINARY_DOWNLOAD=1
 
 cd compass
 
-npm ci
+npm ci --ignore-scripts
 
 node_modules/.bin/lerna run bootstrap --stream \
     --ignore @mongodb-js/mongodb-compass \

@@ -5,9 +5,9 @@
   "scripts": {
     "format": "./compass/node_modules/.bin/prettier --config ./compass/.prettierrc.json --write \"src/**/*.{ts,tsx,js}\" \"*.js\" \"vendors/*.js\" ",
     "prebuild": "rm -rf dist",
-    "build-client": "ELECTRON_OVERRIDE_DIST_PATH=/dev/null ELECTRON_SKIP_BINARY_DOWNLOAD=1 compass/node_modules/.bin/webpack",
+    "build-client": "cross-env ELECTRON_OVERRIDE_DIST_PATH=/dev/null ELECTRON_SKIP_BINARY_DOWNLOAD=1 compass/node_modules/.bin/webpack",
     "bc": "npm run build-client",
-    "build-client:production": "ELECTRON_OVERRIDE_DIST_PATH=/dev/null ELECTRON_SKIP_BINARY_DOWNLOAD=1 NODE_ENV=production compass/node_modules/.bin/webpack",
+    "build-client:production": "cross-env ELECTRON_OVERRIDE_DIST_PATH=/dev/null ELECTRON_SKIP_BINARY_DOWNLOAD=1 NODE_ENV=production compass/node_modules/.bin/webpack",
     "build-server": "rollup -c",
     "bs": "npm run build-server",
     "build-server:production": "NODE_ENV=production rollup -c",
@@ -59,6 +59,7 @@
     "@rollup/plugin-commonjs": "^28.0.8",
     "@rollup/plugin-json": "^6.1.0",
     "copy-webpack-plugin": "^13.0.0",
+    "cross-env": "^10.1.0",
     "mocha": "^11.7.5",
     "rollup": "^4.52.5"
   },
