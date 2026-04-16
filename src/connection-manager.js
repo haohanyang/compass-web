@@ -17,8 +17,6 @@ const {
 const { ConnectionString } = require('mongodb-connection-string-url');
 const { JSONFileWithEncryption } = require('./encryption');
 
-const dbFileName = 'connections.json';
-
 /**
  * Base class
  * @class
@@ -332,7 +330,16 @@ class EncryptedJsonFileConnectionManager extends ConnectionManager {
    */
   async #getDb() {
     if (!this.#db) {
-      const storePath = path.resolve(__dirname, '..', dbFileName);
+      const passwordHash = crypto
+        .createHash('sha256')
+        .update(this.#masterPassword)
+        .digest('hex')
+        .slice(0, 16);
+      const storePath = path.resolve(
+        __dirname,
+        '..',
+        `connections-${passwordHash}.json`
+      );
 
       this.#db = new Low(
         new JSONFileWithEncryption(storePath, this.#masterPassword),
