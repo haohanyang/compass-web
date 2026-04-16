@@ -1,6 +1,9 @@
 import { EventEmitter } from 'events';
 import { randomBytes } from 'crypto';
 
+const baseRoute =
+  document.querySelector('meta[name="base-route"]')?.content || '';
+
 export class WorkerRuntime {
   constructor(uri, driverOptions, cliOptions, workerOptions, eventEmitter) {
     this.id = randomBytes(8).toString('hex');
@@ -74,7 +77,7 @@ export class WorkerRuntime {
   connect() {
     this._inflight = new Map();
     this._counter = 0;
-    this.ws = new WebSocket('/shell');
+    this.ws = new WebSocket(baseRoute ? `/${baseRoute}/shell` : '/shell');
 
     let resolveReady, rejectReady;
     this._ready = new Promise((resolve, reject) => {

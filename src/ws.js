@@ -75,8 +75,7 @@ function handleWebsocketConnection(fastify, socket, request) {
   socket.isAlive = false;
 
   request.log.info(
-    'new ws connection (total %s)',
-    fastify.websocketServer.clients.size
+    `new ws connection (total ${fastify.websocketServer.clients.size})`
   );
 
   let mongoSocket;
@@ -172,9 +171,7 @@ function handleWebsocketConnection(fastify, socket, request) {
       });
       mongoSocket.on(connectEvent, () => {
         request.log.info(
-          'server socket connected at %s:%s',
-          connectOptions.host,
-          connectOptions.port
+          `server socket connected at ${connectOptions.host}:${connectOptions.port}`
         );
         mongoSocket.setTimeout(0);
         const encoded = encodeStringMessageWithTypeByte(
