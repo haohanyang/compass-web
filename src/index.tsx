@@ -42,7 +42,6 @@ const initialPreferences: Partial<AllPreferences> = {
   enableShell: false,
   enableConnectInNewWindow: false,
   atlasServiceBackendPreset: 'atlas',
-  enableShell: true,
 };
 
 resetGlobalCSS();

@@ -1,7 +1,9 @@
 const { WorkerRuntime } = require('@mongosh/node-runtime-worker-thread');
 
 export class WorkerRuntimeManager {
-  constructor() {
+  constructor(args) {
+    this.enabled = args.enableShell;
+
     /** @type {Record<string, WorkerRuntime>} */
     this.workerRuntimes = {};
 
@@ -21,6 +23,10 @@ export class WorkerRuntimeManager {
     workerOptions,
     emitter,
   }) {
+    if (!this.enabled) {
+      throw new Error('Mongo Shell is not enabled');
+    }
+
     if (this.workerRuntimes[id]) {
       await this.workerRuntimes[id].terminate();
     }

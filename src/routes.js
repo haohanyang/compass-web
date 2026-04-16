@@ -84,6 +84,7 @@ module.exports = function (fastify, _opts, done) {
         cloudBaseUrl: args.baseRoute ? `/${args.baseRoute}/api` : '/api',
         atlasApiBaseUrl: args.baseRoute ? `/${args.baseRoute}/api` : '/api',
         authPortalUrl: '',
+        enableShell: args.enableShell,
       },
     });
   });

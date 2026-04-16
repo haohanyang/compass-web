@@ -13,15 +13,7 @@ const args = readCliArgs();
 
 const connectionManager = new InMemoryConnectionManager(args);
 
-const workerRuntimeManager = new WorkerRuntimeManager();
-
-// setInterval(() => {
-//   console.log("Worker Runtimes", Object.keys(workerRuntimeManager.workerRuntimes));
-// }, 5000);
-
-// setInterval(() => {
-//   console.log("Sockets", Object.keys(workerRuntimeManager.sockets));
-// }, 5000);
+const workerRuntimeManager = new WorkerRuntimeManager(args);
 
 // Setup the interval to check all sockets every 30 seconds
 const checkLivenessInterval = setInterval(() => {

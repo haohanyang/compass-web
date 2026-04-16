@@ -3,14 +3,6 @@ import { randomBytes } from 'crypto';
 
 export class WorkerRuntime {
   constructor(uri, driverOptions, cliOptions, workerOptions, eventEmitter) {
-    console.log(
-      'New WorkerRuntime created',
-      uri,
-      driverOptions,
-      cliOptions,
-      workerOptions
-    );
-
     this.id = randomBytes(8).toString('hex');
 
     this.configs = {
@@ -50,9 +42,7 @@ export class WorkerRuntime {
     return result?.prompt;
   }
 
-  setEvaluationListener(listener) {
-    console.warn('setEvaluationListener not implemented', listener);
-  }
+  setEvaluationListener(_listener) {}
 
   async terminate() {
     this.ws?.close();

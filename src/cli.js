@@ -99,6 +99,11 @@ function readCliArgs() {
       description: 'Master password to encrypt/decrypt connection credentials',
       default: 'default-master-password',
     })
+    .options('enable-shell', {
+      type: 'boolean',
+      description: 'Enable Mongo Shell',
+      default: false,
+    })
     .parse();
 
   /**
