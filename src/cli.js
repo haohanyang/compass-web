@@ -158,8 +158,7 @@ function readCliArgs() {
     };
   }
 
-  const baseRoute = args.baseRoute.trim();
-  console.log('Base Route', baseRoute);
+  const baseRoute = args.baseRoute.trim().replace(/^\/+|\/+$/g, '');
   return { ...args, mongoURIs, basicAuth, baseRoute };
 }
 
