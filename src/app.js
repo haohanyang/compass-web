@@ -87,6 +87,10 @@ fastify.register(require('@fastify/multipart'));
 
 registerAuth(fastify);
 
+fastify.get('/healthz', async (request, reply) => {
+  reply.send({ status: 'ok' });
+});
+
 fastify.after(() => {
   const baseRoute = args.baseRoute;
 
