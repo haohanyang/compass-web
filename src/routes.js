@@ -64,8 +64,6 @@ module.exports = function (fastify, _opts, done) {
     const preferences = settings;
 
     reply.send({
-      orgId: args.orgId,
-      projectId: args.projectId,
       appName: args.appName,
       preferences: {
         ...preferences,
