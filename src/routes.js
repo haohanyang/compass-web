@@ -41,7 +41,7 @@ module.exports = function (fastify, _opts, done) {
   const connectionManager = fastify.connectionManager;
 
   const settings = {
-    enableGenAIFeatures: args.enableGenAiFeatures,
+    enableGenAIFeatures: args.enableGenAi,
     enableGenAISampleDocumentPassing: args.enableGenAiSampleDocuments,
   };
 
@@ -67,8 +67,8 @@ module.exports = function (fastify, _opts, done) {
       appName: args.appName,
       preferences: {
         ...preferences,
-        enableGenAIFeaturesAtlasOrg: preferences.enableGenAIFeatures,
-        enableGenAIFeaturesAtlasProject: preferences.enableGenAIFeatures,
+        enableGenAIFeaturesAtlasOrg: preferences.enableGenAi,
+        enableGenAIFeaturesAtlasProject: preferences.enableGenAi,
         enableGenAISampleDocumentPassing:
           preferences.enableGenAISampleDocumentPassing,
         enableGenAISampleDocumentPassingOnAtlasProject:
@@ -76,7 +76,7 @@ module.exports = function (fastify, _opts, done) {
         optInDataExplorerGenAIFeatures:
           preferences.optInDataExplorerGenAIFeatures ?? false,
         cloudFeatureRolloutAccess: {
-          GEN_AI_COMPASS: preferences.enableGenAIFeatures,
+          GEN_AI_COMPASS: preferences.enableGenAi,
         },
         wsBaseUrl: args.baseRoute ? '/' + args.baseRoute : '',
         cloudBaseUrl: args.baseRoute ? `/${args.baseRoute}/api` : '/api',
@@ -427,7 +427,7 @@ module.exports = function (fastify, _opts, done) {
     '/ai/mql-query',
     { preHandler: fastify.csrfProtection },
     async (request, reply) => {
-      if (!args.enableGenAiFeatures) {
+      if (!args.enableGenAi) {
         reply.status(400).send({ error: 'Gen AI is not enabled' });
       }
 
@@ -457,7 +457,7 @@ module.exports = function (fastify, _opts, done) {
     '/ai/mql-aggregation',
     { preHandler: fastify.csrfProtection },
     async (request, reply) => {
-      if (!args.enableGenAiFeatures) {
+      if (!args.enableGenAi) {
         reply.status(400).send({ error: 'Gen AI is not enabled' });
       }
 

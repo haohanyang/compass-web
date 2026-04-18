@@ -59,9 +59,9 @@ function readCliArgs() {
       description: 'OpenAI model used in GenAI service.',
       default: 'gpt-5-mini',
     })
-    .option('enable-gen-ai-features', {
+    .option('enable-gen-ai', {
       type: 'boolean',
-      description: 'Enable GenAI features',
+      description: 'Enable GenAI to generate queries',
       default: false,
     })
     .option('enable-gen-ai-sample-documents', {
@@ -108,8 +108,9 @@ function readCliArgs() {
 
         mongoURIs.push(mongoUri);
       } catch (err) {
-        errMessage += `Connection string no.${index + 1} is invalid: ${err.message
-          }\n`;
+        errMessage += `Connection string no.${index + 1} is invalid: ${
+          err.message
+        }\n`;
       }
     });
 
