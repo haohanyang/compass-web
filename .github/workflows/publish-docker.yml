@@ -3,13 +3,8 @@ name: Publish compass-web to Docker Hub
 on:
   workflow_dispatch:
     inputs:
-      is_latest:
-        description: "Whether to publish with latest tag"
-        required: true
-        default: false
-        type: boolean
       version:
-        description: "The version to publish"
+        description: "The version to publish (defaults to version in package.json)"
         required: false
         default: ""
         type: string
@@ -27,7 +22,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Check version
+      - name: Check version and detect channel
         id: check-version
         run: |
           version=$(node -e "console.log(require('./package.json').version);")
@@ -38,11 +33,23 @@ jobs:
           fi
 
           if curl --silent --fail "https://registry.hub.docker.com/v2/repositories/haohanyang/compass-web/tags/$version/" > /dev/null; then
-            echo "image haohanyang/compass-web:$version" already exists
+            echo "image haohanyang/compass-web:$version already exists"
             exit 1
           fi
 
+          if [[ "$version" == *"-alpha"* ]]; then
+            channel="alpha"
+          elif [[ "$version" == *"-beta"* ]]; then
+            channel="beta"
+          elif [[ "$version" == *"-rc"* ]]; then
+            channel="rc"
+          else
+            channel="latest"
+          fi
+
           echo "version=${version}" >> $GITHUB_OUTPUT
+          echo "channel=${channel}" >> $GITHUB_OUTPUT
+          echo "Detected version=${version}, channel=${channel}"
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -54,19 +61,9 @@ jobs:
         uses: docker/setup-buildx-action@v3
       - name: Build and push
         uses: docker/build-push-action@v6
-        if: ${{ github.event.inputs.is_latest == 'false' }}
         with:
           push: true
-          tags: haohanyang/compass-web:${{ steps.check-version.outputs.version }}
-          provenance: mode=max
-          platforms: linux/amd64,linux/arm64
-          build-args: COMPASS_WEB_VERSION=${{ steps.check-version.outputs.version }}
-      - name: Build and push with latest tag
-        uses: docker/build-push-action@v6
-        if: ${{ github.event.inputs.is_latest == 'true' }}
-        with:
-          push: true
-          tags: haohanyang/compass-web:${{ steps.check-version.outputs.version }},haohanyang/compass-web:latest
+          tags: haohanyang/compass-web:${{ steps.check-version.outputs.version }},haohanyang/compass-web:${{ steps.check-version.outputs.channel }}
           provenance: mode=max
           platforms: linux/amd64,linux/arm64
           build-args: COMPASS_WEB_VERSION=${{ steps.check-version.outputs.version }}

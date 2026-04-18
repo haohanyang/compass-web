@@ -3,15 +3,11 @@ name: Publish compass-web to npm
 on:
   workflow_dispatch:
     inputs:
-      tag:
-        description: "Tag to publish"
-        type: choice
-        required: true
-        options:
-          - latest
-          - alpha
-          - beta
-          - rc
+      version:
+        description: "The version to publish (defaults to version in package.json)"
+        required: false
+        default: ""
+        type: string
 
 jobs:
   publish-npm:
@@ -21,6 +17,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        if: ${{ github.event.inputs.version != '' }}
+        with:
+          ref: "v${{ github.event.inputs.version }}"
+          submodules: true
+      - uses: actions/checkout@v4
+        if: ${{ github.event.inputs.version == '' }}
         with:
           submodules: true
       - uses: pnpm/action-setup@v4
@@ -33,6 +35,24 @@ jobs:
           node-version: 24
           cache: pnpm
           registry-url: https://registry.npmjs.org
+      - name: Detect channel from version
+        id: check-version
+        run: |
+          version=$(node -e "console.log(require('./package.json').version);")
+
+          if [[ "$version" == *"-alpha"* ]]; then
+            channel="alpha"
+          elif [[ "$version" == *"-beta"* ]]; then
+            channel="beta"
+          elif [[ "$version" == *"-rc"* ]]; then
+            channel="rc"
+          else
+            channel="latest"
+          fi
+
+          echo "version=${version}" >> $GITHUB_OUTPUT
+          echo "channel=${channel}" >> $GITHUB_OUTPUT
+          echo "Detected version=${version}, channel=${channel}"
       - name: Bootstrap
         run: bash bootstrap.sh
       - run: pnpm i --frozen-lockfile
@@ -43,4 +63,4 @@ jobs:
       - name: Publish to npmjs
         env:
           NPM_CONFIG_PROVENANCE: true
-        run: pnpm publish --tag ${{ github.event.inputs.tag }} --access public
+        run: pnpm publish --tag ${{ steps.check-version.outputs.channel }} --access public
