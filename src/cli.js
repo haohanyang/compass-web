@@ -25,21 +25,6 @@ function readCliArgs() {
       description: 'Host to run the server on',
       default: 'localhost',
     })
-    .options('org-id', {
-      type: 'string',
-      description: 'Organization ID for the connection',
-      default: 'default-org-id',
-    })
-    .options('project-id', {
-      type: 'string',
-      description: 'Project ID for the connection',
-      default: 'default-project-id',
-    })
-    .options('cluster-id', {
-      type: 'string',
-      description: 'Cluster ID for the connection',
-      default: 'default-cluster-id',
-    })
     .option('basic-auth-username', {
       type: 'string',
       description: 'Username for Basic HTTP authentication scheme',
@@ -123,9 +108,8 @@ function readCliArgs() {
 
         mongoURIs.push(mongoUri);
       } catch (err) {
-        errMessage += `Connection string no.${index + 1} is invalid: ${
-          err.message
-        }\n`;
+        errMessage += `Connection string no.${index + 1} is invalid: ${err.message
+          }\n`;
       }
     });
 

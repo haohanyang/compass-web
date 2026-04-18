@@ -105,9 +105,9 @@ class InMemoryConnectionManager extends ConnectionManager {
             connectionString: uri.href,
           },
           atlasMetadata: {
-            orgId: args.orgId,
-            projectId: args.projectId,
-            clusterUniqueId: args.clusterId,
+            orgId: '-',
+            projectId: '-',
+            clusterUniqueId: '-',
             clusterName: uri.searchParams.get('name') ?? uri.hosts[0],
             clusterType: 'REPLICASET',
             clusterState: 'IDLE',
@@ -239,9 +239,9 @@ class EncryptedJsonFileConnectionManager extends ConnectionManager {
           connectionString: uri.href,
         },
         atlasMetadata: {
-          orgId: args.orgId,
-          projectId: args.projectId,
-          clusterUniqueId: args.clusterId,
+          orgId: '-',
+          projectId: '-',
+          clusterUniqueId: '-',
           clusterName:
             (uri.hosts && uri.hosts[0]) || uri.hostname || 'unknown-cluster',
           clusterType: 'REPLICASET',
