@@ -74,7 +74,6 @@ fastify.register(require('@fastify/cookie'));
 
 fastify.register(require('@fastify/formbody'));
 
-// CSRF protection
 fastify.register(require('@fastify/csrf-protection'), {
   getToken: (req) => {
     return req.headers['csrf-token'];
@@ -82,12 +81,11 @@ fastify.register(require('@fastify/csrf-protection'), {
   sessionPlugin: '@fastify/cookie',
 });
 
-// File upload
 fastify.register(require('@fastify/multipart'));
 
 registerAuth(fastify);
 
-fastify.get('/healthz', async (request, reply) => {
+fastify.get('/healthz', { logLevel: 'silent' }, async (_request, reply) => {
   reply.send({ status: 'ok' });
 });
 
@@ -116,7 +114,7 @@ fastify.after(() => {
 });
 
 // Clean up interval if server closes
-fastify.addHook('onClose', (instance, done) => {
+fastify.addHook('onClose', (_instance, done) => {
   clearInterval(checkLivenessInterval);
   done();
 });
