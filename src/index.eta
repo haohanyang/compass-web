@@ -21,12 +21,18 @@
         height: 100vh;
       }
 
+      .compass-init-loader {
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 10vh;
+      }
+
       .loader-before-app-loads {
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 8px;
-        margin-top: 20vh;
+        margin-top: 10vh;
       }
 
       .loader-before-app-loads-spinner {
@@ -42,8 +48,8 @@
       .loader-before-app-loads-label {
         color: #00684a;
         font-family: 'Euclid Circular A', sans-serif;
-        font-size: 14px;
-        font-weight: 600;
+        font-size: 18px;
+        font-weight: 700;
       }
 
       @keyframes rotation {

@@ -124,7 +124,12 @@ const App = () => {
               }}
             />
           </WithConnectionStorageProvider>
-        ) : null}
+        ) : (
+          <SpinLoaderWithLabel
+            className="compass-init-loader"
+            progressText="Loading Compass"
+          />
+        )}
       </React.Suspense>
     </Body>
   );
