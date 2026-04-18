@@ -1,6 +1,10 @@
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import { CompassWeb } from './components/compass-web';
+
+const CompassWeb = React.lazy(() =>
+  import('./components/compass-web').then((m) => ({ default: m.CompassWeb }))
+);
+
 import {
   resetGlobalCSS,
   css,
@@ -86,38 +90,42 @@ const App = () => {
 
   return (
     <Body as="div" className={sandboxContainerStyles}>
-      {projectParams ? (
-        <WithConnectionStorageProvider
-          preferences={projectParams.preferences}
-          projectId="-"
-        >
-          <CompassWeb
+      <React.Suspense
+        fallback={
+          <SpinLoaderWithLabel
+            className="compass-init-loader"
+            progressText="Loading Compass"
+          />
+        }
+      >
+        {projectParams ? (
+          <WithConnectionStorageProvider
+            preferences={projectParams.preferences}
             projectId="-"
-            orgId="-"
-            appName="Compass Web"
-            onActiveWorkspaceTabChange={updateCurrentTab}
-            initialWorkspace={currentTab ?? undefined}
-            initialPreferences={{
-              ...initialPreferences,
-              ...projectParams.preferences,
-            }}
-            onLog={compassWebLogger.log}
-            onDebug={compassWebLogger.debug}
-            onFailToLoadConnections={(error) => {
-              openToast('failed-to-load-connections', {
-                title: 'Failed to load connections',
-                description: error.message,
-                variant: 'warning',
-              });
-            }}
-          ></CompassWeb>
-        </WithConnectionStorageProvider>
-      ) : (
-        <SpinLoaderWithLabel
-          className="compass-init-loader"
-          progressText="Loading Compass"
-        />
-      )}
+          >
+            <CompassWeb
+              projectId="-"
+              orgId="-"
+              appName="Compass Web"
+              onActiveWorkspaceTabChange={updateCurrentTab}
+              initialWorkspace={currentTab ?? undefined}
+              initialPreferences={{
+                ...initialPreferences,
+                ...projectParams.preferences,
+              }}
+              onLog={compassWebLogger.log}
+              onDebug={compassWebLogger.debug}
+              onFailToLoadConnections={(error: Error) => {
+                openToast('failed-to-load-connections', {
+                  title: 'Failed to load connections',
+                  description: error.message,
+                  variant: 'warning',
+                });
+              }}
+            />
+          </WithConnectionStorageProvider>
+        ) : null}
+      </React.Suspense>
     </Body>
   );
 };

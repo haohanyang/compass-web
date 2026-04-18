@@ -21,23 +21,29 @@
         height: 100vh;
       }
 
-      .compass-init-loader {
-        margin-left: auto;
-        margin-right: auto;
-        margin-top: 10vh;
+      .loader-before-app-loads {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        margin-top: 20vh;
       }
 
-      .loader-before-app-loads {
-        width: 48px;
-        height: 48px;
-        margin-top: 20vh;
-        border: 5px solid #000000;
-        border-bottom-color: transparent;
+      .loader-before-app-loads-spinner {
+        width: 24px;
+        height: 24px;
+        border: 2px solid transparent;
+        border-top-color: #1c2d38;
         border-radius: 50%;
         box-sizing: border-box;
-        animation: rotation 1s linear infinite;
-        margin-left: auto;
-        margin-right: auto;
+        animation: rotation 700ms ease infinite;
+      }
+
+      .loader-before-app-loads-label {
+        color: #00684a;
+        font-family: 'Euclid Circular A', sans-serif;
+        font-size: 14px;
+        font-weight: 600;
       }
 
       @keyframes rotation {
@@ -54,8 +60,11 @@
 
   <body>
     <div id="sandbox-app">
-      <div class="loader-before-app-loads"></div>
+      <div class="loader-before-app-loads">
+        <div class="loader-before-app-loads-spinner"></div>
+        <span class="loader-before-app-loads-label">Loading Compass</span>
+      </div>
     </div>
-    <script src="/compass.js"></script>
+    <script src="compass.js"></script>
   </body>
 </html>
