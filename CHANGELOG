@@ -1,3 +1,16 @@
+## 0.4.0 - 2026-04-22
+
+### Added
+
+- Added Mongo shell support (`--enable-shell`)
+- Added base route support (`--base-route /compass`)
+- Added connection string encryption (`--master-password secret-password`)
+
+### Changed
+
+- Improved loading UI
+- Rename `--enable-gen-ai-features` to `--enable-gen-ai-features`
+
 ## 0.3.1 - 2025-11-05
 
 ### Added
