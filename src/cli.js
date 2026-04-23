@@ -95,11 +95,12 @@ function readCliArgs() {
    */
   const mongoURIs = [];
 
+  // Validate MongoDB connection strings
+  let errMessage = '';
+
   if (args.mongoUri) {
     let mongoURIStrings = args.mongoUri.trim().split(/\s+/);
 
-    // Validate MongoDB connection strings
-    let errMessage = '';
     mongoURIStrings.forEach((uri, index) => {
       try {
         const mongoUri = new ConnectionString(uri);
