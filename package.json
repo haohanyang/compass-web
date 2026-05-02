@@ -1,6 +1,6 @@
 {
   "name": "compass-web",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "bin": "./dist/server.js",
   "files": [
     "dist/",
