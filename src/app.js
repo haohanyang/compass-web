@@ -59,6 +59,7 @@ fastify.decorate('workerRuntimeManager', workerRuntimeManager);
 
 fastify.register(require('@fastify/static'), {
   root: __dirname,
+  prefix: args.baseRoute ? '/' + args.baseRoute + '/' : '/',
 });
 
 fastify.register(require('@fastify/view'), {
