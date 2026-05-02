@@ -1,3 +1,9 @@
+## 0.4.2 - 2026-05-02
+
+### Changed
+
+- Fixed base route with slash, .e.g, `app/compass`
+
 ## 0.4.1 - 2026-04-23
 
 ### Changed
