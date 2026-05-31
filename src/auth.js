@@ -21,6 +21,15 @@ function registerAuth(instance) {
       },
       authenticate: true,
     });
+
+    instance.after(() => {
+      instance.addHook('onRequest', (request, reply, done) => {
+        if (request.url === '/healthz') {
+          return done();
+        }
+        return instance.basicAuth(request, reply, done);
+      });
+    });
   }
 }
 

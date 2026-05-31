@@ -49,10 +49,6 @@ module.exports = function (fastify, _opts, done) {
     settings.enableCreatingNewConnections = true;
   }
 
-  if (args.basicAuth) {
-    fastify.addHook('onRequest', fastify.basicAuth);
-  }
-
   fastify.get('/version', (_request, reply) => {
     reply.send({
       version: pkgJson.version,
