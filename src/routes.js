@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { Writable } = require('stream');
+const { Readable, Writable } = require('stream');
 const { generateQuery, generateAggregation } = require('./gen-ai');
 const DataService = require('./data-service');
 const {
@@ -47,6 +47,46 @@ module.exports = function (fastify, _opts, done) {
 
   if (args.enableEditConnections) {
     settings.enableCreatingNewConnections = true;
+  }
+
+  // `await request.file()` resolves as soon as the parser reaches the first
+  // file part, so any form field sent *after* the file (as the browser client
+  // does with `json`) is not parsed yet and is silently missing from
+  // `file.fields`. Iterating `request.parts()` and draining each file stream
+  // lets the parser continue past the file, so the `json` field is read
+  // regardless of which order the client sends the two parts in. The file is
+  // buffered in memory, bounded by `--max-upload-size`.
+  async function readMultipartUpload(request, maxBytes) {
+    let buffer = null;
+    let rawJson;
+
+    for await (const part of request.parts()) {
+      if (part.type === 'file') {
+        const chunks = [];
+        let total = 0;
+        for await (const chunk of part.file) {
+          total += chunk.length;
+          if (total > maxBytes) {
+            throw new Error(
+              `Uploaded file exceeds the ${maxBytes} byte limit (set --max-upload-size to raise it)`
+            );
+          }
+          chunks.push(chunk);
+        }
+        if (part.file.truncated) {
+          throw new Error('Uploaded file was truncated by the multipart parser');
+        }
+        buffer = Buffer.concat(chunks);
+      } else if (part.fieldname === 'json') {
+        rawJson = part.value;
+      }
+    }
+
+    return {
+      hasFile: buffer !== null,
+      rawJson,
+      stream: () => Readable.from(buffer),
+    };
   }
 
   fastify.get('/version', (_request, reply) => {
@@ -265,7 +305,7 @@ module.exports = function (fastify, _opts, done) {
       const file = await request.file();
 
       if (!file) {
-        reply.status(400).send({ error: 'No file' });
+        return reply.status(400).send({ error: 'No file' });
       }
 
       const res = await guessFileType({
@@ -280,15 +320,15 @@ module.exports = function (fastify, _opts, done) {
     '/upload-json',
     { preHandler: fastify.csrfProtection },
     async (request, reply) => {
-      const file = await request.file();
+      const upload = await readMultipartUpload(request, args.maxUploadSize);
 
-      if (!file) {
-        reply.status(400).send({ error: 'No file' });
+      if (!upload.hasFile) {
+        return reply.status(400).send({ error: 'No file' });
       }
 
-      const rawJson = file.fields.json?.value;
+      const rawJson = upload.rawJson;
       if (!rawJson) {
-        reply.status(400).send({ error: 'No json body' });
+        return reply.status(400).send({ error: 'No json body' });
       }
 
       const body = JSON.parse(rawJson);
@@ -297,14 +337,14 @@ module.exports = function (fastify, _opts, done) {
         body.connectionId
       );
       if (!mongoClient) {
-        reply.status(400).send({ error: 'connection id not found' });
+        return reply.status(400).send({ error: 'connection id not found' });
       }
 
       try {
         const res = await importJSON({
           ...body,
           dataService: new DataService(mongoClient),
-          input: file.file,
+          input: upload.stream(),
         });
 
         reply.send(res);
@@ -319,15 +359,15 @@ module.exports = function (fastify, _opts, done) {
     '/upload-csv',
     { preHandler: fastify.csrfProtection },
     async (request, reply) => {
-      const file = await request.file();
+      const upload = await readMultipartUpload(request, args.maxUploadSize);
 
-      if (!file) {
-        reply.status(400).send({ error: 'No file' });
+      if (!upload.hasFile) {
+        return reply.status(400).send({ error: 'No file' });
       }
 
-      const rawJson = file.fields.json?.value;
+      const rawJson = upload.rawJson;
       if (!rawJson) {
-        reply.status(400).send({ error: 'No json body' });
+        return reply.status(400).send({ error: 'No json body' });
       }
 
       const body = JSON.parse(rawJson);
@@ -336,14 +376,14 @@ module.exports = function (fastify, _opts, done) {
         body.connectionId
       );
       if (!mongoClient) {
-        reply.status(400).send({ error: 'connection id not found' });
+        return reply.status(400).send({ error: 'connection id not found' });
       }
 
       try {
         const res = await importCSV({
           ...body,
           dataService: new DataService(mongoClient),
-          input: file.file,
+          input: upload.stream(),
         });
 
         reply.send(res);
@@ -358,15 +398,15 @@ module.exports = function (fastify, _opts, done) {
     '/list-csv-fields',
     { preHandler: fastify.csrfProtection },
     async (request, reply) => {
-      const file = await request.file();
+      const upload = await readMultipartUpload(request, args.maxUploadSize);
 
-      if (!file) {
-        reply.status(400).send({ error: 'No file' });
+      if (!upload.hasFile) {
+        return reply.status(400).send({ error: 'No file' });
       }
 
-      const rawJson = file.fields.json?.value;
+      const rawJson = upload.rawJson;
       if (!rawJson) {
-        reply.status(400).send({ error: 'No json body' });
+        return reply.status(400).send({ error: 'No json body' });
       }
 
       const body = JSON.parse(rawJson);
@@ -374,7 +414,7 @@ module.exports = function (fastify, _opts, done) {
       try {
         const res = await listCSVFields({
           ...body,
-          input: file.file,
+          input: upload.stream(),
         });
 
         reply.send(res);
@@ -389,15 +429,15 @@ module.exports = function (fastify, _opts, done) {
     '/analyze-csv-fields',
     { preHandler: fastify.csrfProtection },
     async (request, reply) => {
-      const file = await request.file();
+      const upload = await readMultipartUpload(request, args.maxUploadSize);
 
-      if (!file) {
-        reply.status(400).send({ error: 'No file' });
+      if (!upload.hasFile) {
+        return reply.status(400).send({ error: 'No file' });
       }
 
-      const rawJson = file.fields.json?.value;
+      const rawJson = upload.rawJson;
       if (!rawJson) {
-        reply.status(400).send({ error: 'No json body' });
+        return reply.status(400).send({ error: 'No json body' });
       }
 
       const body = JSON.parse(rawJson);
@@ -405,7 +445,7 @@ module.exports = function (fastify, _opts, done) {
       try {
         const res = await analyzeCSVFields({
           ...body,
-          input: file.file,
+          input: upload.stream(),
         });
 
         reply.send(res);

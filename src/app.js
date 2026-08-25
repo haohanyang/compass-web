@@ -83,7 +83,10 @@ fastify.register(require('@fastify/csrf-protection'), {
   sessionPlugin: '@fastify/cookie',
 });
 
-fastify.register(require('@fastify/multipart'));
+fastify.register(require('@fastify/multipart'), {
+  limits: { fileSize: args.maxUploadSize },
+  throwFileSizeLimit: true,
+});
 
 registerAuth(fastify);
 
