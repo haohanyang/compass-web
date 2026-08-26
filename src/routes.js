@@ -173,8 +173,17 @@ module.exports = function (fastify, _opts, done) {
       const outputStream = new Writable({
         objectMode: true,
         write: (chunk, encoding, callback) => {
-          reply.raw.write(chunk);
-          callback();
+          // reply.raw.write() returns false once the socket's send buffer is
+          // full. Ignoring that (as before) drains the export source as fast
+          // as it can produce data regardless of how fast the client is
+          // reading, so a slow client makes the whole export accumulate in
+          // the socket buffer -- RSS then tracks the collection size instead
+          // of staying flat. Waiting for 'drain' applies backpressure instead.
+          if (reply.raw.write(chunk)) {
+            callback();
+          } else {
+            reply.raw.once('drain', callback);
+          }
         },
       });
 
