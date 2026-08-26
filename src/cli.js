@@ -132,8 +132,7 @@ function readCliArgs() {
     })
     .option('max-upload-size', {
       type: 'number',
-      description:
-        'Maximum size in bytes accepted for JSON/CSV import uploads',
+      description: 'Maximum size in bytes accepted for JSON/CSV import uploads',
       default: 100 * 1024 * 1024,
     })
     .parse();

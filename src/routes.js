@@ -74,7 +74,9 @@ module.exports = function (fastify, _opts, done) {
           chunks.push(chunk);
         }
         if (part.file.truncated) {
-          throw new Error('Uploaded file was truncated by the multipart parser');
+          throw new Error(
+            'Uploaded file was truncated by the multipart parser'
+          );
         }
         buffer = Buffer.concat(chunks);
       } else if (part.fieldname === 'json') {
@@ -129,7 +131,7 @@ module.exports = function (fastify, _opts, done) {
   fastify.post('/connection-info', async (request, reply) => {
     const connectionInfo = request.body;
     if (!connectionInfo) {
-      reply.status(400).send({ error: 'connectionInfo is required' });
+      return reply.status(400).send({ error: 'connectionInfo is required' });
     }
 
     try {
@@ -145,7 +147,7 @@ module.exports = function (fastify, _opts, done) {
     const connectionId = request.params.connectionId;
 
     if (!connectionId) {
-      reply.status(400).send({ error: 'connectionId is required' });
+      return reply.status(400).send({ error: 'connectionId is required' });
     }
     try {
       await connectionManager.deleteConnectionInfo(connectionId);
@@ -291,7 +293,7 @@ module.exports = function (fastify, _opts, done) {
     );
 
     if (!mongoClient) {
-      reply.status(400).send({ error: 'connection id not found' });
+      return reply.status(400).send({ error: 'connection id not found' });
     }
 
     const res = await gatherFieldsFromQuery({
@@ -470,11 +472,11 @@ module.exports = function (fastify, _opts, done) {
     { preHandler: fastify.csrfProtection },
     async (request, reply) => {
       if (!args.enableGenAi) {
-        reply.status(400).send({ error: 'Gen AI is not enabled' });
+        return reply.status(400).send({ error: 'Gen AI is not enabled' });
       }
 
       if (!args.openaiApiKey) {
-        reply.status(400).send({ error: 'Missing OpenAI API key' });
+        return reply.status(400).send({ error: 'Missing OpenAI API key' });
       }
 
       try {
@@ -500,11 +502,11 @@ module.exports = function (fastify, _opts, done) {
     { preHandler: fastify.csrfProtection },
     async (request, reply) => {
       if (!args.enableGenAi) {
-        reply.status(400).send({ error: 'Gen AI is not enabled' });
+        return reply.status(400).send({ error: 'Gen AI is not enabled' });
       }
 
       if (!args.openaiApiKey) {
-        reply.status(400).send({ error: 'Missing OpenAI API key' });
+        return reply.status(400).send({ error: 'Missing OpenAI API key' });
       }
 
       try {
