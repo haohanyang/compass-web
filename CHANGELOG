@@ -1,3 +1,9 @@
+## 0.5.1 - 2026-08-27
+
+- Fixed parsing error on file upload and added upload file size option `max-upload-size`. (https://github.com/haohanyang/compass-web/pull/44)
+- Fixed missing backpressure control on data export stream. (https://github.com/haohanyang/compass-web/pull/45)
+- Added gzip compression on data export. (https://github.com/haohanyang/compass-web/pull/46)
+
 ## 0.5.0 - 2026-06-02
 
 ### Added
