@@ -106,6 +106,8 @@ All options can be set via CLI flags or environment variables prefixed with `CW_
 | `--enable-edit-connections`        | `CW_ENABLE_EDIT_CONNECTIONS`        | boolean | `false`       | Allow users to add/edit connections in the UI                   |
 | `--master-password`                | `CW_MASTER_PASSWORD`                | string  | —             | Master password to encrypt/decrypt saved connection credentials |
 | `--enable-shell`                   | `CW_ENABLE_SHELL`                   | boolean | `false`       | Enable the Mongo Shell                                          |
+| `--max-upload-size`                | `CW_MAX_UPLOAD_SIZE`                | number  | `104857600`   | Maximum size in bytes accepted for JSON/CSV import uploads (100 MB) |
+| `--export-gzip-level`              | `CW_EXPORT_GZIP_LEVEL`              | number  | `1`           | zlib gzip level for data exports; `0` disables compression      |
 | `--enable-gen-ai`                  | `CW_ENABLE_GEN_AI`                  | boolean | `false`       | Enable GenAI query/aggregation features                         |
 | `--enable-gen-ai-sample-documents` | `CW_ENABLE_GEN_AI_SAMPLE_DOCUMENTS` | boolean | `false`       | Upload sample documents to the GenAI service                    |
 | `--openai-api-key`                 | `CW_OPENAI_API_KEY`                 | string  | —             | OpenAI API key for GenAI services                               |

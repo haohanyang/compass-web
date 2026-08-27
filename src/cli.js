@@ -138,7 +138,7 @@ function readCliArgs() {
     .option('export-gzip-level', {
       type: 'number',
       description:
-        'zlib gzip level used to compress GET /export/:exportId when the client sends Accept-Encoding: gzip (0 disables compression)',
+        'zlib gzip level used on data export (0 disables compression)',
       default: 1,
     })
     .parse();
