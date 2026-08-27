@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const zlib = require('zlib');
 const { Readable, Writable } = require('stream');
 const { generateQuery, generateAggregation } = require('./gen-ai');
 const DataService = require('./data-service');
@@ -211,20 +212,39 @@ module.exports = function (fastify, _opts, done) {
 
       reply.raw.setHeader('Content-Type', 'application/octet-stream');
 
+      // JSON/CSV exports compress extremely well -- every document repeats
+      // the same keys. Compress here, before the socket buffer, rather than
+      // at a reverse proxy: registering @fastify/compress wouldn't help
+      // anyway, since it hooks onSend and this handler writes straight to
+      // reply.raw, bypassing the reply lifecycle entirely. Content-Encoding
+      // is transport-level, so the browser still saves a plain .json/.csv
+      // file regardless of whether this branch is taken.
+      const exportSink = (() => {
+        const acceptEncoding = String(request.headers['accept-encoding'] || '');
+        if (args.exportGzipLevel <= 0 || !/\bgzip\b/.test(acceptEncoding)) {
+          return reply.raw;
+        }
+        reply.raw.setHeader('Content-Encoding', 'gzip');
+        reply.raw.setHeader('Vary', 'Accept-Encoding');
+        const gzip = zlib.createGzip({ level: args.exportGzipLevel });
+        gzip.pipe(reply.raw);
+        return gzip;
+      })();
+
       let res;
       const outputStream = new Writable({
         objectMode: true,
         write: (chunk, encoding, callback) => {
-          // reply.raw.write() returns false once the socket's send buffer is
-          // full. Ignoring that (as before) drains the export source as fast
-          // as it can produce data regardless of how fast the client is
+          // exportSink.write() returns false once its buffer is full.
+          // Ignoring that (as before) drains the export source as fast as
+          // it can produce data regardless of how fast the client is
           // reading, so a slow client makes the whole export accumulate in
           // the socket buffer -- RSS then tracks the collection size instead
           // of staying flat. Waiting for 'drain' applies backpressure instead.
-          if (reply.raw.write(chunk)) {
+          if (exportSink.write(chunk)) {
             callback();
           } else {
-            reply.raw.once('drain', callback);
+            exportSink.once('drain', callback);
           }
         },
       });
@@ -276,7 +296,9 @@ module.exports = function (fastify, _opts, done) {
       } catch (err) {
         console.error(`Export ${exportId} failed`, err);
       } finally {
-        reply.raw.end();
+        // Ending the gzip stream flushes it and, through the pipe, ends the
+        // response; when exportSink is reply.raw itself this is unchanged.
+        exportSink.end();
       }
     } else {
       reply.status(404).send({

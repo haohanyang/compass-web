@@ -135,6 +135,12 @@ function readCliArgs() {
       description: 'Maximum size in bytes accepted for JSON/CSV import uploads',
       default: 100 * 1024 * 1024,
     })
+    .option('export-gzip-level', {
+      type: 'number',
+      description:
+        'zlib gzip level used to compress GET /export/:exportId when the client sends Accept-Encoding: gzip (0 disables compression)',
+      default: 1,
+    })
     .parse();
 
   /**
