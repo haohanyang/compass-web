@@ -1,3 +1,7 @@
+## 0.5.2 - 2026-11-02
+
+- Upgraded docker base image to node 24.22.1 to fix brotli CVE-2026-111497. (https://github.com/haohanyang/compass-web/pull/49)
+
 ## 0.5.1 - 2026-08-28
 
 - Fixed parsing error on file upload and added upload file size option `max-upload-size`. (https://github.com/haohanyang/compass-web/pull/44)
