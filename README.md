@@ -111,7 +111,7 @@ All options can be set via CLI flags or environment variables prefixed with `CW_
 | `--enable-gen-ai`                  | `CW_ENABLE_GEN_AI`                  | boolean | `false`       | Enable GenAI query/aggregation features                         |
 | `--enable-gen-ai-sample-documents` | `CW_ENABLE_GEN_AI_SAMPLE_DOCUMENTS` | boolean | `false`       | Upload sample documents to the GenAI service                    |
 | `--openai-api-key`                 | `CW_OPENAI_API_KEY`                 | string  | —             | OpenAI API key for GenAI services                               |
-| `--openai-model`                   | `CW_OPENAI_MODEL`                   | string  | `gpt-5-mini`  | OpenAI model used for GenAI                                     |
+| `--openai-model`                   | `CW_OPENAI_MODEL`                   | string  | `gpt-5.6-terra` | OpenAI model used for GenAI                                     |
 | `--query-system-prompt`            | `CW_QUERY_SYSTEM_PROMPT`            | string  | _(built-in)_  | System prompt for query generation                              |
 | `--aggregation-system-prompt`      | `CW_AGGREGATION_SYSTEM_PROMPT`      | string  | _(built-in)_  | System prompt for aggregation generation                        |
 

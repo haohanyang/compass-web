@@ -233,7 +233,7 @@ if (require.main === module) {
         collectionName: 'testCollection',
       },
       {
-        openaiModel: 'gpt-5-mini',
+        openaiModel: 'gpt-5.6-terra',
         querySystemPrompt: QUERY_SYSTEM_PROMPT,
       }
     ),
@@ -249,7 +249,7 @@ if (require.main === module) {
         collectionName: 'testCollection',
       },
       {
-        openaiModel: 'gpt-5-mini',
+        openaiModel: 'gpt-5.6-terra',
         aggregationSystemPrompt: AGGREGATION_SYSTEM_PROMPT,
       }
     ),
