@@ -99,7 +99,7 @@ function readCliArgs() {
     .option('openai-model', {
       type: 'string',
       description: 'OpenAI model used in GenAI service.',
-      default: 'gpt-5-mini',
+      default: 'gpt-5.6-terra',
     })
     .option('enable-gen-ai', {
       type: 'boolean',
