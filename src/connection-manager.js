@@ -7,6 +7,7 @@
  */
 
 const path = require('path');
+const fs = require('fs').promises;
 const crypto = require('crypto');
 const { MongoClient } = require('mongodb');
 const { Low } = require('lowdb');
@@ -218,6 +219,12 @@ class EncryptedJsonFileConnectionManager extends ConnectionManager {
    */
   #masterPassword;
 
+  /**
+   * Directory that holds connections-<hash>.json and its salt.
+   * @type {string?}
+   */
+  #connectionsDir;
+
   constructor(args) {
     super();
 
@@ -225,6 +232,7 @@ class EncryptedJsonFileConnectionManager extends ConnectionManager {
     this.#presetConnections = [];
     this.#mongoClients = new Map();
     this.#masterPassword = args.masterPassword;
+    this.#connectionsDir = args.connectionsDir || null;
 
     /** @type {ConnectionString[]} */
     const connectionStrings = args.mongoURIs;
@@ -335,11 +343,11 @@ class EncryptedJsonFileConnectionManager extends ConnectionManager {
         .update(this.#masterPassword)
         .digest('hex')
         .slice(0, 16);
-      const storePath = path.resolve(
-        __dirname,
-        '..',
-        `connections-${passwordHash}.json`
-      );
+      const directory = this.#connectionsDir
+        ? path.resolve(this.#connectionsDir)
+        : path.resolve(__dirname, '..');
+      await fs.mkdir(directory, { recursive: true });
+      const storePath = path.join(directory, `connections-${passwordHash}.json`);
 
       this.#db = new Low(
         new JSONFileWithEncryption(storePath, this.#masterPassword),

@@ -1,0 +1,11 @@
+.git
+compass/*
+!compass/packages
+compass/packages/*
+!compass/packages/compass-import-export
+compass/packages/compass-import-export/node_modules
+node_modules
+dist
+patches
+*.md
+images

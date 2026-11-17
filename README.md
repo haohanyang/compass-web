@@ -2,7 +2,7 @@
 
 ![npm](https://img.shields.io/npm/v/compass-web.svg)
 
-A port of the MongoDB Compass to Web. The frontend is rebuilt and re-packaged from the original [@mongodb-js/compass-web](https://www.npmjs.com/package/@mongodb-js/compass-web) v1.46.2. It provides an easy way deploy a MongoDB GUI and access it on a browser, while keeping most of the MongoDB Compass features.
+A port of the MongoDB Compass to Web. The frontend is rebuilt and re-packaged from the original [@mongodb-js/compass-web](https://www.npmjs.com/package/@mongodb-js/compass-web) v1.53.2. It provides an easy way deploy a MongoDB GUI and access it on a browser, while keeping most of the MongoDB Compass features.
 
 ## Supported Cloud Providers
 
@@ -79,7 +79,7 @@ Pass one or more MongoDB connection strings, separated by spaces, via `--mongo-u
 compass-web --mongo-uri="mongodb://db1:27017 mongodb+srv://cluster0.example.mongodb.net"
 ```
 
-You can add and edit extra connections in the app by adding `--enable-edit-connections`. If `--master-password` is specified, the connections are encrypted and saved as `connections-<hash>.json`. Otherwise, connections are saved in memory, which will be discarded when server restarts.
+You can add and edit extra connections in the app by adding `--enable-edit-connections`. With `--master-password` set, each save writes `connections-<hash>.json` and `connections-<hash>.salt` into `--connections-dir` (`CW_CONNECTIONS_DIR`). Startup logs that directory as `Encrypted connection credentials directory: ...`. Without the option, the files are written above the server bundle. Without the master password, edits stay in memory and disappear on restart. The Docker image builds this server from the local repo; rebuild it after changing the flag.
 
 ## Command Line Options
 
@@ -105,6 +105,7 @@ All options can be set via CLI flags or environment variables prefixed with `CW_
 | `--session-secret`                 | `CW_SESSION_SECRET`                 | string  | —             | Session cookie encryption secret (>=32 chars; required for OIDC) |
 | `--enable-edit-connections`        | `CW_ENABLE_EDIT_CONNECTIONS`        | boolean | `false`       | Allow users to add/edit connections in the UI                   |
 | `--master-password`                | `CW_MASTER_PASSWORD`                | string  | —             | Master password to encrypt/decrypt saved connection credentials |
+| `--connections-dir`                | `CW_CONNECTIONS_DIR`                | string  | package root  | Directory for the encrypted connection files and salt           |
 | `--enable-shell`                   | `CW_ENABLE_SHELL`                   | boolean | `false`       | Enable the Mongo Shell                                          |
 | `--max-upload-size`                | `CW_MAX_UPLOAD_SIZE`                | number  | `104857600`   | Maximum size in bytes accepted for JSON/CSV import uploads (100 MB) |
 | `--export-gzip-level`              | `CW_EXPORT_GZIP_LEVEL`              | number  | `1`           | zlib gzip level for data exports; `0` disables compression      |
@@ -154,7 +155,7 @@ compass-web \
 
 ## Build
 
-Clone the repo and fetch the upstream dependency [compass](https://github.com/mongodb-js/compass). `node-gyp` is needed to build the project.
+Clone the repo and fetch the upstream dependency [compass](https://github.com/mongodb-js/compass) v1.53.2. `node-gyp` is needed to build the project. `bootstrap.sh` reapplies the local Compass adaptations in `patches/`.
 
 ```bash
 git clone https://github.com/haohanyang/compass-web.git

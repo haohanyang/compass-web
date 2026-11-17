@@ -12,7 +12,7 @@ import {
   openToast,
   SpinLoaderWithLabel,
 } from '../compass/packages/compass-components/src';
-import { useWorkspaceTabRouter } from '../compass/packages/compass-web/sandbox/sandbox-workspace-tab-router';
+import { useWorkspaceTabRouter } from './workspace-tab-router';
 import { type AllPreferences } from '../compass/packages/compass-preferences-model/src';
 import { compassWebLogger } from './logger';
 import { getAPIRoute } from './shared';

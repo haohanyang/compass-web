@@ -1,5 +1,5 @@
 import React from 'react';
-import { registerHadronPlugin } from '../../compass/packages/hadron-app-registry/src';
+import { registerCompassPlugin } from '../../compass/packages/compass-app-registry/src';
 import ImportModal from './import-modal';
 import ImportInProgressModal from '../../compass/packages/compass-import-export/src/components/import-in-progress-modal';
 import { activatePlugin } from '../../compass/packages/compass-import-export/src/stores/import-store';
@@ -19,7 +19,7 @@ function ImportComponent() {
 }
 
 // @ts-ignore
-export const ImportPlugin = registerHadronPlugin(
+export const ImportPlugin = registerCompassPlugin(
   {
     name: 'Import',
     component: ImportComponent,

@@ -15,6 +15,34 @@ function withArgv(args, fn) {
   }
 }
 
+describe('readCliArgs connections dir', () => {
+  it('leaves connectionsDir unset by default', () => {
+    withArgv(['--mongo-uri', 'mongodb://localhost:27017'], () => {
+      const args = readCliArgs();
+      assert.strictEqual(args.connectionsDir, undefined);
+    });
+  });
+
+  it('reads --connections-dir', () => {
+    withArgv(['--connections-dir', '/data/credentials'], () => {
+      const args = readCliArgs();
+      assert.strictEqual(args.connectionsDir, '/data/credentials');
+    });
+  });
+
+  it('reads CW_CONNECTIONS_DIR', () => {
+    process.env.CW_CONNECTIONS_DIR = '/var/lib/compass';
+    try {
+      withArgv([], () => {
+        const args = readCliArgs();
+        assert.strictEqual(args.connectionsDir, '/var/lib/compass');
+      });
+    } finally {
+      delete process.env.CW_CONNECTIONS_DIR;
+    }
+  });
+});
+
 describe('readCliArgs OIDC auth', () => {
   it('leaves auth null when OIDC is not configured', () => {
     withArgv(['--mongo-uri', 'mongodb://localhost:27017'], () => {

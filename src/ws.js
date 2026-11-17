@@ -46,65 +46,63 @@ function decodeMessageWithTypeByte(message) {
   }
 }
 
+function proxyLog(message) {
+  console.error(`compass-web: ${message}`);
+}
+
 /**
  * @param {import('fastify').FastifyInstance} fastify
  * @param {import('@fastify/websocket').WebSocket} socket
- * @param {import('fastify').FastifyRequest} request
  */
-function handleMongoConnection(fastify, socket, request) {
+function handleMongoConnection(fastify, socket) {
   const args = fastify.args;
 
   /** @type {ConnectionString[]} */
   const mongoURIs = args.mongoURIs;
 
-  // If any configured connection string requests insecure TLS, apply it globally
-  // to all proxy TLS sockets. This covers cases where the driver resolves hosts
-  // different from the seed host in the URI (e.g., AWS DocumentDB replicas).
-  const globalTLSInsecure = mongoURIs.some(({ uri }) => {
+  const tlsParamEnabled = (connectionString, name) => {
     try {
-      const params = uri.searchParams;
-      return (
-        params.get('tlsInsecure') === 'true' ||
-        params.get('tlsAllowInvalidCertificates') === 'true'
-      );
+      return connectionString.searchParams.get(name) === 'true';
     } catch (_e) {
       return false;
     }
-  });
+  };
 
-  socket.isAlive = false;
-
-  request.log.info(
-    `new ws connection (total ${fastify.websocketServer.clients.size})`
+  // If any configured connection string requests insecure TLS, apply it globally
+  // to all proxy TLS sockets. This covers cases where the driver resolves hosts
+  // different from the seed host in the URI (e.g., AWS DocumentDB replicas).
+  const globalTLSInsecure = mongoURIs.some(
+    (connectionString) =>
+      tlsParamEnabled(connectionString, 'tlsInsecure') ||
+      tlsParamEnabled(connectionString, 'tlsAllowInvalidCertificates')
   );
 
   let mongoSocket;
+  let target = 'unknown';
+
+  proxyLog(
+    `browser websocket open (total ${fastify.websocketServer.clients.size})`
+  );
+
+  socket.on('error', (err) => {
+    proxyLog(`browser websocket error target=${target} message=${err.message}`);
+  });
 
   socket.on('message', async (message) => {
-    if (mongoSocket) {
-      mongoSocket.write(decodeMessageWithTypeByte(message), 'binary');
-    } else {
+    try {
+      if (mongoSocket) {
+        mongoSocket.write(decodeMessageWithTypeByte(message), 'binary');
+        return;
+      }
+
       // First message before socket is created is with connection info
       /** @type {import('mongodb').MongoClientOptions}*/
       const { tls: useSecureConnection, ...connectOptions } =
         decodeMessageWithTypeByte(message);
+      target = `${connectOptions.host}:${connectOptions.port}`;
 
-      request.log.info(
-        'setting up new%s connection to %s:%s',
-        useSecureConnection ? ' secure' : '',
-        connectOptions.host,
-        connectOptions.port
-      );
       mongoSocket = useSecureConnection
         ? (() => {
-            /**  @type {import('tls').ConnectionOptions} */
-            const tlsOptions = {
-              servername: connectOptions.host,
-              // Ensure TLS 1.2+ for services like AWS DocDB
-              minVersion: 'TLSv1.2',
-              ...connectOptions,
-            };
-
             const isTrue = (v) =>
               v === true || v === 'true' || v === 1 || v === '1';
             const isFalse = (v) =>
@@ -118,76 +116,110 @@ function handleMongoConnection(fastify, socket, request) {
               isFalse(connectOptions.rejectUnauthorized);
 
             // Also honor insecure flags from the configured CW_MONGO_URI for this host
-            const wantInsecureFromServerConfig = mongoURIs.some(({ uri }) => {
-              try {
-                const hostMatches = (uri.hosts || []).some(
-                  (h) => h.split(':')[0] === connectOptions.host
-                );
-                if (!hostMatches) return false;
-                const params = uri.searchParams;
-                return (
-                  params.get('tlsInsecure') === 'true' ||
-                  params.get('tlsAllowInvalidCertificates') === 'true'
-                );
-              } catch (_e) {
-                return false;
+            const wantInsecureFromServerConfig = mongoURIs.some(
+              (connectionString) => {
+                try {
+                  const hostMatches = (connectionString.hosts || []).some(
+                    (h) => h.split(':')[0] === connectOptions.host
+                  );
+                  if (!hostMatches) return false;
+                  return (
+                    tlsParamEnabled(connectionString, 'tlsInsecure') ||
+                    tlsParamEnabled(
+                      connectionString,
+                      'tlsAllowInvalidCertificates'
+                    )
+                  );
+                } catch (_e) {
+                  return false;
+                }
               }
-            });
+            );
 
             const wantInsecure =
               globalTLSInsecure ||
               wantInsecureFromClient ||
               wantInsecureFromServerConfig;
 
-            if (wantInsecure) {
-              tlsOptions.rejectUnauthorized = false;
-            }
+            /**  @type {import('tls').ConnectionOptions} */
+            const tlsOptions = {
+              host: connectOptions.host,
+              port: connectOptions.port,
+              minVersion: 'TLSv1.2',
+            };
 
-            // Allow skipping hostname validation when requested or when tlsInsecure=true
-            if (
-              wantInsecure ||
-              isTrue(connectOptions.tlsAllowInvalidHostnames)
-            ) {
-              tlsOptions.checkServerIdentity = () => undefined;
-            }
-
-            // Some environments (e.g., DocDB with TLS only) still require SNI
-            if (!tlsOptions.servername) {
+            // SNI with an IP address makes the handshake fail.
+            if (!net.isIP(connectOptions.host)) {
               tlsOptions.servername = connectOptions.host;
             }
 
+            if (wantInsecure) {
+              tlsOptions.rejectUnauthorized = false;
+              tlsOptions.checkServerIdentity = () => undefined;
+            }
+
+            proxyLog(
+              `connecting tls target=${target} rejectUnauthorized=${tlsOptions.rejectUnauthorized !== false} servername=${tlsOptions.servername || ''}`
+            );
             return tls.connect(tlsOptions);
           })()
-        : net.createConnection(connectOptions);
+        : (() => {
+            proxyLog(`connecting tcp target=${target}`);
+            return net.createConnection({
+              host: connectOptions.host,
+              port: connectOptions.port,
+            });
+          })();
       mongoSocket.setKeepAlive(true, 300000);
       mongoSocket.setTimeout(30000);
       mongoSocket.setNoDelay(true);
       const connectEvent = useSecureConnection ? 'secureConnect' : 'connect';
+      let proxyClosed = false;
       SOCKET_ERROR_EVENT_LIST.forEach((evt) => {
         mongoSocket.on(evt, (err) => {
-          request.log.info('server socket error event (%s)', evt, err);
-          socket.close(evt === 'close' ? 1001 : 1011);
+          if (proxyClosed) {
+            return;
+          }
+          proxyClosed = true;
+          const reason = (err && (err.message || err.code)) || evt;
+          proxyLog(
+            `mongo proxy failed target=${target} tls=${Boolean(useSecureConnection)} event=${evt} code=${(err && err.code) || ''} message=${reason}`
+          );
+          socket.close(evt === 'close' ? 1001 : 1011, String(reason).slice(0, 120));
+          if (evt !== 'close') {
+            mongoSocket.destroy();
+          }
         });
       });
       mongoSocket.on(connectEvent, () => {
-        request.log.info(
-          `server socket connected at ${connectOptions.host}:${connectOptions.port}`
-        );
+        proxyLog(`mongo proxy connected target=${target}`);
         mongoSocket.setTimeout(0);
         const encoded = encodeStringMessageWithTypeByte(
           JSON.stringify({ preMessageOk: 1 })
         );
         socket.send(encoded);
       });
-      mongoSocket.on('data', async (data) => {
+      mongoSocket.on('data', (data) => {
+        if (socket.readyState !== 1) {
+          return;
+        }
         socket.send(encodeBinaryMessageWithTypeByte(data));
       });
+    } catch (err) {
+      proxyLog(
+        `mongo proxy setup failed target=${target} message=${err.message}`
+      );
+      socket.close(1011, String(err.message || 'proxy setup failed').slice(0, 120));
     }
   });
 
-  socket.on('close', () => {
+  socket.on('close', (code, reason) => {
+    const reasonText = Buffer.isBuffer(reason) ? reason.toString() : String(reason || '');
+    proxyLog(
+      `browser websocket closed target=${target} code=${code} reason=${reasonText}`
+    );
     mongoSocket?.removeAllListeners();
-    mongoSocket?.end();
+    mongoSocket?.destroy();
   });
 }
 
@@ -198,8 +230,8 @@ function handleMongoConnection(fastify, socket, request) {
  * @param {import('fastify').FastifyPluginCallback} done
  */
 module.exports = function (fastify, _opts, done) {
-  fastify.get('/mongo', { websocket: true }, (socket, request) => {
-    handleMongoConnection(fastify, socket, request);
+  fastify.get('/mongo', { websocket: true }, (socket) => {
+    handleMongoConnection(fastify, socket);
   });
 
   fastify.get('/shell', { websocket: true }, (socket, request) => {

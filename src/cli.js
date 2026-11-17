@@ -125,6 +125,11 @@ function readCliArgs() {
       type: 'string',
       description: 'Master password to encrypt/decrypt connection credentials',
     })
+    .options('connections-dir', {
+      type: 'string',
+      description:
+        'Directory for encrypted connection credential files. Defaults to the directory above the server bundle.',
+    })
     .options('enable-shell', {
       type: 'boolean',
       description: 'Enable Mongo Shell',

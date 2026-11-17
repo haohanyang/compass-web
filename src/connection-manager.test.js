@@ -4,6 +4,7 @@
  * @typedef {import('lowdb').Low<DbData>} LowT
  */
 const path = require('path');
+const os = require('os');
 const fs = require('fs').promises;
 const crypto = require('crypto');
 const assert = require('assert');
@@ -13,15 +14,15 @@ const { EncryptedJsonFileConnectionManager } = require('./connection-manager');
 const masterPassword = 'masterPassword';
 const newMasterPassword = 'newMasterPassword';
 
-function connectionFilePaths(password) {
+function connectionFilePaths(password, directory = path.join(__dirname, '..')) {
   const hash = crypto
     .createHash('sha256')
     .update(password)
     .digest('hex')
     .slice(0, 16);
   return {
-    db: path.join(__dirname, '..', `connections-${hash}.json`),
-    salt: path.join(__dirname, '..', `connections-${hash}.salt`),
+    db: path.join(directory, `connections-${hash}.json`),
+    salt: path.join(directory, `connections-${hash}.salt`),
   };
 }
 
@@ -105,5 +106,35 @@ describe('Test EncryptedJsonFileConnectionManager', () => {
     // Each password produces a separate file on disk
     const { db: newDbFilePath } = connectionFilePaths(newMasterPassword);
     assert.notStrictEqual(dbFilePath, newDbFilePath);
+  });
+
+  it('writes credential files into connectionsDir', async () => {
+    const directory = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'cw-connections-')
+    );
+
+    try {
+      const manager = new EncryptedJsonFileConnectionManager({
+        enableEditConnections: true,
+        mongoURIs: [],
+        masterPassword,
+        connectionsDir: directory,
+      });
+
+      await manager.saveConnectionInfo({
+        id: 'conn-dir',
+        connectionOptions: { connectionString: 'mongodb://localhost:27019' },
+      });
+
+      const { db, salt } = connectionFilePaths(masterPassword, directory);
+      const dbStat = await fs.stat(db);
+      const saltStat = await fs.stat(salt);
+      assert.ok(dbStat.isFile());
+      assert.ok(saltStat.isFile());
+
+      await assert.rejects(fs.stat(dbFilePath), { code: 'ENOENT' });
+    } finally {
+      await fs.rm(directory, { recursive: true, force: true });
+    }
   });
 });

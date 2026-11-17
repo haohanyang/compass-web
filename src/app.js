@@ -1,5 +1,6 @@
 'use strict';
 
+const path = require('path');
 const { Eta } = require('eta');
 const NodeCache = require('node-cache');
 const {
@@ -18,8 +19,19 @@ let connectionManager;
 
 if (args.masterPassword) {
   connectionManager = new EncryptedJsonFileConnectionManager(args);
+  if (args.enableEditConnections) {
+    const directory = args.connectionsDir
+      ? path.resolve(args.connectionsDir)
+      : path.resolve(__dirname, '..');
+    console.log(`Encrypted connection credentials directory: ${directory}`);
+  }
 } else {
   connectionManager = new InMemoryConnectionManager(args);
+  if (args.enableEditConnections) {
+    console.log(
+      'Connection edits stay in memory. Set CW_MASTER_PASSWORD to write them to disk.'
+    );
+  }
 }
 
 const workerRuntimeManager = new WorkerRuntimeManager(args);
@@ -27,14 +39,16 @@ const workerRuntimeManager = new WorkerRuntimeManager(args);
 // Setup the interval to check all sockets every 30 seconds
 const checkLivenessInterval = setInterval(() => {
   fastify.websocketServer.clients.forEach((socket) => {
+    // Mongo proxy sockets are not pinged. Ingress controllers often drop
+    // WebSocket ping/pong, and a missed pong was closing live connections.
+    if (!socket.sessionId) {
+      return;
+    }
     if (socket.isAlive === false) {
-      console.log('Terminating inactive socket');
-      if (socket.sessionId) {
-        workerRuntimeManager.terminateWorkerRuntime(socket.sessionId);
-      } else {
-        socket.terminate();
-      }
-
+      console.error(
+        `compass-web: terminating inactive shell socket (${socket.sessionId})`
+      );
+      workerRuntimeManager.terminateWorkerRuntime(socket.sessionId);
       return;
     }
 
@@ -45,8 +59,13 @@ const checkLivenessInterval = setInterval(() => {
 
 const exportIds = new NodeCache({ stdTTL: 3600 });
 
-const fastify = require('fastify')({
+const Fastify = require('fastify');
+
+const fastify = Fastify({
   logger: true,
+  logController: new Fastify.LogController({
+    disableRequestLogging: true,
+  }),
   trustProxy: Boolean(args.auth?.oidc),
 });
 

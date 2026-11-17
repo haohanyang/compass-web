@@ -1,0 +1,90 @@
+diff --git a/packages/compass-shell/src/stores/store.ts b/packages/compass-shell/src/stores/store.ts
+index 3e7f218..0958d07 100644
+--- a/packages/compass-shell/src/stores/store.ts
++++ b/packages/compass-shell/src/stores/store.ts
+@@ -3,7 +3,7 @@ import type { AnyAction } from 'redux';
+ import type { ThunkAction } from 'redux-thunk';
+ import type { WorkerRuntime } from '@mongosh/node-runtime-worker-thread';
+ import { ObjectId } from 'bson';
+-import { createWorkerRuntime } from '../modules/worker-runtime';
++import { createWorkerRuntime } from 'worker-runtime';
+ import type { ShellPluginExtraArgs } from '../plugin';
+ 
+ /**
+diff --git a/packages/compass-web/src/connection-storage.tsx b/packages/compass-web/src/connection-storage.tsx
+index 722b783..26d8e37 100644
+--- a/packages/compass-web/src/connection-storage.tsx
++++ b/packages/compass-web/src/connection-storage.tsx
+@@ -145,10 +145,17 @@ export class AtlasCloudConnectionStorage
+     let connectionInfoList: ConnectionInfo[] = [];
+ 
+     try {
++      const baseRouteElement =
++        typeof document === 'undefined'
++          ? null
++          : document.querySelector('meta[name="base-route"]');
++      const baseRoute =
++        baseRouteElement instanceof HTMLMetaElement
++          ? baseRouteElement.content
++          : '';
++      const apiPrefix = baseRoute ? `/${baseRoute}/api` : '/api';
+       const res = await this.atlasService.authenticatedFetch(
+-        this.atlasService.cloudEndpoint(
+-          `/explorer/v1/groups/${this.projectId}/clusters/connectionInfo`
+-        )
++        this.atlasService.cloudEndpoint(`${apiPrefix}/connection-info`)
+       );
+ 
+       connectionInfoList = await res.json();
+diff --git a/packages/compass-web/src/url-builder.ts b/packages/compass-web/src/url-builder.ts
+index b69fe14..12cfb20 100644
+--- a/packages/compass-web/src/url-builder.ts
++++ b/packages/compass-web/src/url-builder.ts
+@@ -5,6 +5,14 @@ import type {
+ import type { OpenWorkspaceOptions } from '@mongodb-js/compass-workspaces';
+ import toNS from 'mongodb-ns';
+ 
++function getBaseRoute(): string {
++  if (typeof document === 'undefined') {
++    return '';
++  }
++  const element = document.querySelector('meta[name="base-route"]');
++  return element instanceof HTMLMetaElement ? element.content : '';
++}
++
+ export const defaultHeaders = {
+   'X-Request-Origin': 'atlas-data-explorer',
+ };
+@@ -56,8 +64,10 @@ function getRouteFromCollectionSubTab(subTab: CollectionSubtab): string {
+ export function getWorkspaceTabFromRoute(
+   route: string
+ ): OpenWorkspaceOptions | null {
+-  const [, connectionId, db, coll, subTab] =
+-    decodeURIComponent(route).split('/');
++  const baseRoute = getBaseRoute();
++  const [, connectionId, db, coll, subTab] = decodeURIComponent(
++    baseRoute ? route.substring(baseRoute.length + 1) : route
++  ).split('/');
+ 
+   if (connectionId && db && coll) {
+     const maybeSubTab = getCollectionSubTabFromRoute(subTab);
+@@ -78,8 +88,9 @@ export function getWorkspaceTabFromRoute(
+ }
+ 
+ function buildAbsoluteURL(...parts: string[]) {
++  const baseRoute = getBaseRoute();
+   return (
+-    '/' +
++    (baseRoute ? '/' + baseRoute + '/' : '/') +
+     parts
+       .map((part) => {
+         return encodeURIComponent(part);
+@@ -110,7 +121,7 @@ export function getRouteFromWorkspaceTab(tab: WorkspaceTab | null) {
+       break;
+     }
+     default:
+-      route = '/';
++      route = getBaseRoute() ? '/' + getBaseRoute() : '/';
+   }
+   return route;
+ }

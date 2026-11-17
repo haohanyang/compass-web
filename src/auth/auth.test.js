@@ -156,16 +156,23 @@ describe('OIDC auth routes', () => {
     setMockTokenClaims({
       sub: 'user-2',
       preferred_username: 'bob',
+      email: 'bob@example.com',
       groups: ['viewers'],
+      memberOf: [
+        'CN=Viewers,OU=Groups,DC=example,DC=com',
+        'cn=Ops\\, Team,OU=Groups,DC=example,DC=com',
+      ],
     });
 
     const { callback } = await loginViaOidcCallback(app);
 
     assert.strictEqual(callback.statusCode, 302);
+    const location = decodeURIComponent(callback.headers.location);
     assert.match(
-      callback.headers.location,
-      /\/auth\/login\?error=You%20are%20not%20a%20member%20of%20an%20authorized%20group/
+      location,
+      /\/auth\/login\?error=You are not a member of an authorized group\. Groups: Viewers, Ops, Team/
     );
+    assert.doesNotMatch(location, /OU=Groups|bob@example.com|preferred_username/);
 
     const me = await app.inject({ method: 'GET', url: '/auth/me' });
     assert.strictEqual(me.statusCode, 401);

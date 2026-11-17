@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "ignoreDeprecations": "6.0",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "noCheck": true,
+    "rootDir": "/tmp/compass-import-export/src",
+    "outDir": "/build/compass-import-export",
+    "declaration": false
+  },
+  "include": [
+    "/tmp/compass-import-export/src/export/export-json.ts",
+    "/tmp/compass-import-export/src/export/export-csv.ts",
+    "/tmp/compass-import-export/src/export/export-cursor.ts",
+    "/tmp/compass-import-export/src/export/export-types.ts",
+    "/tmp/compass-import-export/src/export/export-utils.ts",
+    "/tmp/compass-import-export/src/export/gather-fields.ts",
+    "/tmp/compass-import-export/src/import/import-json.ts",
+    "/tmp/compass-import-export/src/import/import-csv.ts",
+    "/tmp/compass-import-export/src/import/import-types.ts",
+    "/tmp/compass-import-export/src/import/import-utils.ts",
+    "/tmp/compass-import-export/src/import/import-writer.ts",
+    "/tmp/compass-import-export/src/import/guess-filetype.ts",
+    "/tmp/compass-import-export/src/import/list-csv-fields.ts",
+    "/tmp/compass-import-export/src/import/analyze-csv-fields.ts",
+    "/tmp/compass-import-export/src/csv/csv-utils.ts",
+    "/tmp/compass-import-export/src/csv/csv-types.ts",
+    "/tmp/compass-import-export/src/utils/logger.ts",
+    "/tmp/compass-import-export/src/utils/utf8-validator.ts",
+    "/tmp/compass-import-export/src/utils/byte-counter.ts"
+  ]
+}

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import AppRegistry, {
   AppRegistryProvider,
   GlobalAppRegistryProvider,
-} from '../../compass/packages/hadron-app-registry/src';
+} from '../../compass/packages/compass-app-registry/src';
 import type { ConnectionInfo } from '../../compass/packages/compass-connections/src/provider';
 import { useConnectionActions } from '../../compass/packages/compass-connections/src/provider';
 import { CompassInstanceStorePlugin } from '../../compass/packages/compass-app-stores/src';

@@ -58,6 +58,21 @@ const options = {
           replacement: path.resolve(__dirname, 'vendors/hadron-document'),
         },
         {
+          find: 'hadron-type-checker',
+          replacement: path.resolve(__dirname, 'vendors/hadron-type-checker'),
+        },
+        {
+          find: '@mongodb-js/compass-preferences-model/provider',
+          replacement: path.resolve(
+            __dirname,
+            'vendors/compass-preferences-model-provider'
+          ),
+        },
+        {
+          find: '@mongodb-js/mongodb-schema',
+          replacement: require.resolve('mongodb-schema'),
+        },
+        {
           find: 'bson',
           replacement: path.resolve(__dirname, 'vendors/bson'),
         },

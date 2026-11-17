@@ -5,6 +5,30 @@ const client = require('openid-client');
 const { setSessionUser } = require('../session-user');
 
 /**
+ * @param {unknown} memberOf
+ * @returns {string[]}
+ */
+function commonNamesFromMemberOf(memberOf) {
+  const values = Array.isArray(memberOf)
+    ? memberOf
+    : memberOf
+      ? [memberOf]
+      : [];
+
+  return values.flatMap((value) => {
+    if (typeof value !== 'string') {
+      return [];
+    }
+    const match = value.match(/(?:^|,)\s*CN=((?:\\.|[^,])+)/i);
+    if (!match) {
+      return [];
+    }
+    const name = match[1].replace(/\\(.)/g, '$1').trim();
+    return name ? [name] : [];
+  });
+}
+
+/**
  * @param {import('fastify').FastifyInstance} fastify
  * @param {{ prefix: string, oidc: NonNullable<import('../index').AuthConfig['oidc']> }} opts
  */
@@ -81,11 +105,11 @@ async function registerOidcProvider(fastify, { prefix, oidc }) {
           : [];
         const allowed = oidc.allowedGroups.some((g) => groupList.includes(g));
         if (!allowed) {
+          const groupNames = commonNamesFromMemberOf(claims.memberOf);
+          const message = `You are not a member of an authorized groups ${oidc.allowedGroups}.\n\nYour groups: ${groupNames.join(', ') || '(none)'}`;
           req.session.delete();
           reply.redirect(
-            `${prefix}/auth/login?error=${encodeURIComponent(
-              'You are not a member of an authorized group'
-            )}`
+            `${prefix}/auth/login?error=${encodeURIComponent(message)}`
           );
           return;
         }
