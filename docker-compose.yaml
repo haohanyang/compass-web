@@ -1,18 +1,25 @@
 services:
   compass:
-    image: haohanyang/compass-web
+    build: .
+    platform: linux/arm64
     container_name: compass-web-dev-compass
     environment:
-      - CW_MONGO_URI=mongodb://mongo:27017
-    depends_on:
-      - mongo
+      - COMPASS_WEB_DATA_DIR=/data
+      - CW_ENABLE_EDIT_CONNECTIONS=true
+      - CW_MASTER_PASSWORD=seusenha
+      # - ENABLE_DEBUG=false
+      # - ENABLE_INFO=false
+      # - FASTIFY_LOG_LEVEL=info
     ports:
-      - 8080:8080
-    links:
-      - mongo
+      - 8088:8080
+    volumes:
+      - compass-data:/data
 
   mongo:
     image: mongo
     container_name: compass-web-dev-mongo
     ports:
       - 27017:27017
+
+volumes:
+  compass-data:

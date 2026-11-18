@@ -335,9 +335,9 @@ class EncryptedJsonFileConnectionManager extends ConnectionManager {
         .update(this.#masterPassword)
         .digest('hex')
         .slice(0, 16);
+      const dataDir = process.env.COMPASS_WEB_DATA_DIR || path.resolve(__dirname, '..');
       const storePath = path.resolve(
-        __dirname,
-        '..',
+        dataDir,
         `connections-${passwordHash}.json`
       );
 
@@ -349,12 +349,14 @@ class EncryptedJsonFileConnectionManager extends ConnectionManager {
       );
 
       await this.#db.read();
+      console.log('[ConnManager] DB loaded. Connections:', (this.#db.data?.connections?.length || 0));
     }
     return this.#db;
   }
 
   async saveConnectionInfo(connectionInfo) {
     if (this.#editable) {
+      console.log('[ConnManager] Saving connection:', connectionInfo.id);
       const db = await this.#getDb();
 
       await db.update(({ connections }) => {
@@ -373,7 +375,9 @@ class EncryptedJsonFileConnectionManager extends ConnectionManager {
         connectionInfo.id,
         new MongoClient(connectionInfo.connectionOptions.connectionString)
       );
+      console.log('[ConnManager] Connection saved successfully');
     } else {
+      console.log('[ConnManager] Saving disabled (enableEditConnections is false)');
       throw new Error('Editing connections is disabled');
     }
   }

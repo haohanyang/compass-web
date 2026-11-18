@@ -1,5 +1,6 @@
 'use strict';
 
+const path = require('path');
 const { Eta } = require('eta');
 const NodeCache = require('node-cache');
 const {
@@ -17,8 +18,11 @@ const args = readCliArgs();
 let connectionManager;
 
 if (args.masterPassword) {
+  console.log('[APP] Using EncryptedJsonFileConnectionManager');
   connectionManager = new EncryptedJsonFileConnectionManager(args);
 } else {
+  console.log('[APP] Using InMemoryConnectionManager (NO DISK PERSISTENCE)');
+  console.log('[APP] Add --master-password to enable file storage!');
   connectionManager = new InMemoryConnectionManager(args);
 }
 
@@ -59,7 +63,7 @@ fastify.decorate('connectionManager', connectionManager);
 fastify.decorate('workerRuntimeManager', workerRuntimeManager);
 
 fastify.register(require('@fastify/static'), {
-  root: __dirname,
+  root: path.join(__dirname, '..', 'dist'),
   prefix: args.baseRoute ? '/' + args.baseRoute + '/' : '/',
 });
 
@@ -67,7 +71,7 @@ fastify.register(require('@fastify/view'), {
   engine: {
     eta: new Eta(),
   },
-  root: __dirname,
+  root: path.join(__dirname, '..', 'dist'),
 });
 
 fastify.register(require('@fastify/websocket'));
