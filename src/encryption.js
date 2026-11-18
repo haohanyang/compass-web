@@ -41,17 +41,33 @@ class JSONFileWithEncryption extends JSONFile {
   #saltPath;
 
   /**
+   * @type {string}
+   */
+  #dataDir;
+
+  /**
    * @param {PathLike} filename
    * @param {string} masterPassword
    */
   constructor(filename, masterPassword) {
     super(filename);
     this.#masterPassword = masterPassword;
+
+    // Usa COMPASS_WEB_DATA_DIR como caminho base para armazenamento persistente
+    // Se não estiver definida, usa o diretório do projeto
+    this.#dataDir = process.env.COMPASS_WEB_DATA_DIR || path.resolve(__dirname, '..');
+
     const ext = path.extname(filename.toString());
-    this.#saltPath = path.join(
-      path.dirname(filename.toString()),
-      path.basename(filename.toString(), ext) + '.salt'
-    );
+    const fileName = path.basename(filename.toString(), ext);
+    this.#saltPath = path.join(this.#dataDir, fileName + '.salt');
+
+    // Garante que o diretório existe antes de qualquer operação
+    fs.mkdir(this.#dataDir, { recursive: true }).then(() => {
+      console.log('[Encryption] Data directory ensured:', this.#dataDir);
+    }).catch((err) => {
+      console.error('[Encryption] Failed to ensure data directory:', err.message);
+    });
+
   }
 
   /**
@@ -172,6 +188,9 @@ class JSONFileWithEncryption extends JSONFile {
   async write(connectionData) {
     const { connections: decryptedConnections } = connectionData;
 
+    // this.path é a propriedade pública do JSONFile (lowdb)
+    console.log('[Encryption] Writing to:', this.path);
+
     const encryptedConnections = await Promise.all(
       decryptedConnections.map(async (conn) => {
         const encryptedConnectionString = await this.#encrypt(
@@ -187,7 +206,13 @@ class JSONFileWithEncryption extends JSONFile {
       })
     );
 
-    await super.write({ connections: encryptedConnections });
+    try {
+      await super.write({ connections: encryptedConnections });
+      console.log('[Encryption] Write successful to:', this.path);
+    } catch (err) {
+      console.error('[Encryption] Write failed:', err.message);
+      throw err;
+    }
   }
 }
 
